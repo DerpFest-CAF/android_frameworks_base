@@ -44,4 +44,7 @@
     <!-- Slider vibrations fallbacks - set either to non positive to disable
          maximum duration in ms the slider vibrations scale to from 0 -->
     <java-symbol type="integer" name="config_sliderVibFallbackDuration" />
+
+    <!-- Sensor block -->
+    <java-symbol type="array" name="config_blockPackagesSensorDrain" />
 </resources>
