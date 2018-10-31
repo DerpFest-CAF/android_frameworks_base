@@ -16,6 +16,7 @@
 
 package com.android.systemui.statusbar.phone.ui;
 
+import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_BLUETOOTH;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_BINDABLE;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_ICON;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_MOBILE_NEW;
@@ -35,10 +36,12 @@ import com.android.systemui.demomode.DemoModeCommandReceiver;
 import com.android.systemui.modes.shared.ModesUiIcons;
 import com.android.systemui.res.R;
 import com.android.systemui.statusbar.BaseStatusBarFrameLayout;
+import com.android.systemui.statusbar.StatusBarBluetoothView;
 import com.android.systemui.statusbar.StatusBarIconView;
 import com.android.systemui.statusbar.StatusIconDisplayable;
 import com.android.systemui.statusbar.connectivity.ui.MobileContextProvider;
 import com.android.systemui.statusbar.phone.DemoStatusIcons;
+import com.android.systemui.statusbar.phone.PhoneStatusBarPolicy.BluetoothIconState;
 import com.android.systemui.statusbar.phone.StatusBarIconHolder;
 import com.android.systemui.statusbar.phone.StatusBarIconHolder.BindableIconHolder;
 import com.android.systemui.statusbar.phone.StatusBarLocation;
@@ -156,6 +159,7 @@ public class IconManager implements DemoModeCommandReceiver {
             case TYPE_BINDABLE ->
                 // Safe cast, since only BindableIconHolders can set this tag on themselves
                 addBindableIcon((BindableIconHolder) holder, index);
+            case TYPE_BLUETOOTH -> addBluetoothIcon(index, slot, blocked, holder.getBluetoothState());
             default -> null;
         };
     }
@@ -223,6 +227,14 @@ public class IconManager implements DemoModeCommandReceiver {
         return view;
     }
 
+    protected StatusBarBluetoothView addBluetoothIcon(
+            int index, String slot, boolean blocked, BluetoothIconState state) {
+        StatusBarBluetoothView view = onCreateStatusBarBluetoothView(slot, blocked);
+        view.applyBluetoothState(state);
+        mGroup.addView(view, index, onCreateLayoutParams());
+        return view;
+    }
+
     private StatusBarIconView onCreateStatusBarIconView(String slot, boolean blocked) {
         return new StatusBarIconView(mContext, slot, null, blocked);
     }
@@ -248,6 +260,13 @@ public class IconManager implements DemoModeCommandReceiver {
                         slot,
                         mMobileIconsViewModel.viewModelForSub(subId, mLocation)
                 );
+    }
+
+    private StatusBarBluetoothView onCreateStatusBarBluetoothView(
+            String slot, boolean blocked) {
+        StatusBarBluetoothView view =
+                StatusBarBluetoothView.fromContext(mContext, slot, blocked);
+        return view;
     }
 
     protected LinearLayout.LayoutParams onCreateLayoutParams(Shape shape) {
@@ -298,8 +317,18 @@ public class IconManager implements DemoModeCommandReceiver {
             case TYPE_BINDABLE:
                 // Nothing, the new icons update themselves
                 return;
+            case TYPE_BLUETOOTH:
+                onSetBluetoothIcon(viewIndex, holder.getBluetoothState());
+                return;
             default:
                 break;
+        }
+    }
+
+    public void onSetBluetoothIcon(int viewIndex, BluetoothIconState state) {
+        StatusBarBluetoothView view = (StatusBarBluetoothView) mGroup.getChildAt(viewIndex);
+        if (view != null) {
+            view.applyBluetoothState(state);
         }
     }
 
