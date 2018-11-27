@@ -94,4 +94,8 @@
     <!-- DerpFest logo -->
     <string name="derp_logo_title">DerpFest swag</string>
     <string name="derp_logo_summary">Lass alle wissen, dass du DerpFest benutzt, wenn sie deinen Bildschirm sehen</string>
+
+    <!-- Kill button in notification guts -->
+    <string name="force_stop_dlg_title">Beenden erzwingen?</string>
+    <string name="force_stop_dlg_text">Das Beenden einer App zu erzwingen, kann zu unerwünschtem Verhalten führen.</string>
 </resources>

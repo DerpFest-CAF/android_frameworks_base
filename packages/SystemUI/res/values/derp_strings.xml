@@ -121,4 +121,8 @@
     <!-- DerpFest logo -->
     <string name="derp_logo_title">DerpFest swag</string>
     <string name="derp_logo_summary">Let everyone know that you\'re using DerpFest when they see your screen</string>
+
+    <!-- Kill button in notification guts -->
+    <string name="force_stop_dlg_title">Force stop?</string>
+    <string name="force_stop_dlg_text">If you force stop an app, it may misbehave.</string>
 </resources>
