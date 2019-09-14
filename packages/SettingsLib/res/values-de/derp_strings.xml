@@ -20,4 +20,7 @@ los"</string>
 wichtige"</string>
     <string name="interruption_level_alarms_twoline" msgid="2045067991335708767">"Nur
 Wecker"</string>
+
+    <!-- Deep sleep info -->
+    <string name="status_deep_sleep">(Tiefschlaf: %1$d%2$s)</string>
 </resources>
