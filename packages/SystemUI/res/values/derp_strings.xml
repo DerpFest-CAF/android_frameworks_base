@@ -10,6 +10,10 @@
     <!-- Name of the nfc status bar icon. -->
     <string name="status_bar_nfc">NFC</string>
 
+    <!-- AOD QS tile -->
+    <string name="quick_settings_aod_label">AOD</string>
+    <string name="quick_settings_aod_secondary_label_on_at_charge">On at charge</string>
+
     <!-- Status bar -->
     <string name="status_bar_icons_title">Status bar icons</string>
 
