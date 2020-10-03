@@ -1036,4 +1036,9 @@ interface IActivityManager {
      * Set whether three fingers to screen shot is active.
      */
     void setSwipeToScreenshotGestureActive(boolean enabled);
+
+    /**
+     *  Force full screen for devices with cutout
+     */
+    boolean shouldForceCutoutFullscreen(in String packageName);
 }
