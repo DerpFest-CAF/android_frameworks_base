@@ -19168,4 +19168,9 @@ public class ActivityManagerService extends IActivityManager.Stub
     public void setSwipeToScreenshotGestureActive(boolean enabled) {
         mIsSwipeToScreenshotActive = enabled;
     }
+
+    @Override
+    public boolean shouldForceCutoutFullscreen(String packageName) {
+        return mActivityTaskManager.shouldForceCutoutFullscreen(packageName);
+    }
 }
