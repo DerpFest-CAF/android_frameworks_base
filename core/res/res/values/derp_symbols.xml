@@ -16,4 +16,7 @@
     <java-symbol type="string" name="config_batterymeterLandBoltPath" />
     <java-symbol type="string" name="config_batterymeterLandPowersavePath" />
     <java-symbol type="string" name="config_batterymeterLandErrorPerimeterPath" />
+
+    <!-- For dynamic default font styles -->
+    <java-symbol type="string" name="config_bodyFontFamily" />
 </resources>
