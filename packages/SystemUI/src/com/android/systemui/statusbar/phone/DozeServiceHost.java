@@ -120,6 +120,7 @@ public final class DozeServiceHost implements DozeHost {
     private boolean mPulsePending;
     private final DozeInteractor mDozeInteractor;
     private final Context mContext;
+    private boolean mIsAmbientSwipeEnabled;
 
     // For pulse light
     private boolean mIsFaceDown = false;
@@ -278,6 +279,9 @@ public final class DozeServiceHost implements DozeHost {
 
     @Override
     public void pulseWhileDozing(@NonNull PulseCallback callback, int reason) {
+        mIsAmbientSwipeEnabled = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.DOZE_AMBIENT_SWIPE, 1, UserHandle.USER_CURRENT) == 1;
+
         if (reason == DozeLog.PULSE_REASON_SENSOR_LONG_PRESS) {
             mPowerManager.wakeUp(SystemClock.uptimeMillis(), PowerManager.WAKE_REASON_GESTURE,
                                  "com.android.systemui:LONG_PRESS");
@@ -299,7 +303,9 @@ public final class DozeServiceHost implements DozeHost {
             @Override
             public void onPulseStarted() {
                 callback.onPulseStarted(); // requestState(DozeMachine.State.DOZE_PULSING)
-                mCentralSurfaces.updateNotificationPanelTouchState();
+                if (mIsAmbientSwipeEnabled) {
+                    mCentralSurfaces.updateNotificationPanelTouchState();
+                }
                 setPulsing(true);
             }
 
@@ -322,7 +328,9 @@ public final class DozeServiceHost implements DozeHost {
                 }
                 mCentralSurfaces.updateScrimController();
                 mPulseExpansionHandler.setPulsing(pulsing);
-                mNotificationWakeUpCoordinator.setPulsing(pulsing);
+                if (mIsAmbientSwipeEnabled) {
+                    mNotificationWakeUpCoordinator.setPulsing(pulsing);
+                }
             }
         }, reason);
         // DozeScrimController is in pulse state, now let's ask ScrimController to start
