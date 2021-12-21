@@ -57,6 +57,7 @@ import com.android.systemui.statusbar.phone.BiometricUnlockController
 import com.android.systemui.statusbar.policy.ConfigurationController
 import com.android.systemui.statusbar.policy.KeyguardStateController
 import com.android.systemui.util.ViewController
+import org.derpfest.providers.DerpFestSettings
 import java.io.PrintWriter
 import javax.inject.Inject
 import javax.inject.Provider
@@ -386,6 +387,8 @@ constructor(
     private val udfpsControllerCallback =
         object : UdfpsController.Callback {
             override fun onFingerDown() {
+                if (Settings.Secure.getInt(sysuiContext.contentResolver,
+                       DerpFestSettings.Secure.UDFPS_ANIM, 0) == 0) {
                 // only show dwell ripple for device entry
                 if (keyguardUpdateMonitor.isFingerprintDetectionRunning) {
                     showDwellRipple()
@@ -393,7 +396,10 @@ constructor(
             }
 
             override fun onFingerUp() {
-                mView.retractDwellRipple()
+                if (Settings.Secure.getInt(sysuiContext.contentResolver,
+                       DerpFestSettings.Secure.UDFPS_ANIM, 0) == 0) {
+                    mView.retractDwellRipple()
+                }
             }
         }
 
