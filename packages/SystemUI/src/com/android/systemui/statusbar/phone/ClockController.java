@@ -101,6 +101,10 @@ public class ClockController {
 
             // Override any previous setting
             mActiveClock.setClockVisibleByUser(!mDenyListed);
+
+            // Add background chip
+            mActiveClock.setBackgroundResource(R.drawable.sb_date_bg);
+            mActiveClock.setPadding(10,2,10,2);
         });
     }
 
