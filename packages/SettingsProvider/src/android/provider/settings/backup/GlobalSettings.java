@@ -125,5 +125,6 @@ public class GlobalSettings {
         Settings.Global.REMOVE_GUEST_ON_EXIT,
         Settings.Global.USER_SWITCHER_ENABLED,
         Settings.Global.WIFI_OFF_TIMEOUT,
+        Settings.Global.BLUETOOTH_OFF_TIMEOUT,
     };
 }
