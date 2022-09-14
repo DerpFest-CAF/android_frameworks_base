@@ -1062,10 +1062,12 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
     
     private class LyricController extends LyricViewController {
         private View mLeftSide;
+        private View mCenteredArea;
 
         public LyricController(Context context, View statusBar) {
             super(context, statusBar);
             mLeftSide = statusBar.findViewById(R.id.status_bar_start_side_except_heads_up);
+            mCenteredArea = statusBar.findViewById(R.id.centered_area);
         }
 
         public void showLyricView(boolean animate) {
@@ -1075,6 +1077,7 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
             boolean hasOngoingCall = visibilityModel.getShowOngoingCallChip();
             if (!disableNotifications && !hasOngoingCall && isLyricStarted()) {
                 animateHide(mLeftSide, animate);
+                animateHide(mCenteredArea, animate);
                 animateShow(getView(), animate);
             }
         }
@@ -1082,6 +1085,7 @@ public class CollapsedStatusBarFragment extends Fragment implements CommandQueue
         public void hideLyricView(boolean animate) {
             animateHide(getView(), animate);
             animateShow(mLeftSide, animate);
+            animateShow(mCenteredArea, animate);
         }
     }
 }
