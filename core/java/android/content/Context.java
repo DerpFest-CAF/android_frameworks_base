@@ -6717,6 +6717,16 @@ public abstract class Context {
     public static final String BLOCKED_NUMBERS_SERVICE = "blocked_numbers";
 
     /**
+     * Use with {@link #getSystemService} to retrieve a
+     * {@link com.oplus.os.LinearmotorVibrator} for accessing linear motor vibrator state.
+     *
+     * @hide
+     * @see #getSystemService
+     * @see com.oplus.os.LinearmotorVibrator
+     */
+    public static final String LINEARMOTOR_VIBRATOR_SERVICE = "linearmotor";
+
+    /**
      * Use with {@link #getSystemService(String)} to retrieve the
      * {@link ProtoLogConfigurationService} for registering ProtoLog clients.
      *
