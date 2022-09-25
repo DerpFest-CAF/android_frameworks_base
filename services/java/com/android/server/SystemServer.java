@@ -285,6 +285,7 @@ import com.android.server.usage.StorageStatsService;
 import com.android.server.usage.UsageStatsService;
 import com.android.server.usb.UsbService;
 import com.android.server.utils.TimingsTraceAndSlog;
+import com.android.server.vibrator.LinearmotorVibratorService;
 import com.android.server.vibrator.VibratorManagerService;
 import com.android.server.voiceinteraction.VoiceInteractionManagerService;
 import com.android.server.vr.VrManagerService;
@@ -2701,6 +2702,13 @@ public final class SystemServer implements Dumpable {
                             "ro.system_settings.service.backgound_install_control_enabled", true)) {
                 t.traceBegin("StartBackgroundInstallControlService");
                 mSystemServiceManager.startService(BackgroundInstallControlService.class);
+                t.traceEnd();
+            }
+
+            if (context.getResources().getBoolean(
+                    com.android.internal.R.bool.config_mockOplusLinearmotorVibratorService)) {
+                t.traceBegin("StartLinearmotorVibratorService");
+                mSystemServiceManager.startService(LinearmotorVibratorService.class);
                 t.traceEnd();
             }
         }
