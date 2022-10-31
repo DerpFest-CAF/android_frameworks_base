@@ -351,14 +351,26 @@ public final class NotificationRecord {
         VibratorHelper helper = new VibratorHelper(mContext);
         final Notification notification = getSbn().getNotification();
         final boolean insistent = (notification.flags & Notification.FLAG_INSISTENT) != 0;
-
+        VibrationEffect defaultVibration = helper.createDefaultVibration(insistent);
+        VibrationEffect customVibration = helper.createWaveformVibration(
+                getChannel().getCustomVibrationPattern(), insistent);
+        VibrationEffect vibration;
+        if (getChannel().shouldVibrate()) {
+            vibration = getChannel().getVibrationPattern() == null
+                    ? (customVibration != null ? customVibration : defaultVibration)
+                    : helper.createWaveformVibration(getChannel().getVibrationPattern(), insistent);
+        } else {
+            vibration = null;
+        }
         if (mPreChannelsNotification
                 && (getChannel().getUserLockedFields()
                 & NotificationChannel.USER_LOCKED_VIBRATION) == 0) {
             final boolean useDefaultVibrate =
                     (notification.defaults & Notification.DEFAULT_VIBRATE) != 0;
             if (useDefaultVibrate) {
-                return helper.createDefaultVibration(insistent);
+                vibration = customVibration != null ? customVibration : defaultVibration;
+            } else {
+                vibration = helper.createWaveformVibration(notification.vibrate, insistent);
             }
             return  helper.createWaveformVibration(notification.vibrate, insistent);
         }
