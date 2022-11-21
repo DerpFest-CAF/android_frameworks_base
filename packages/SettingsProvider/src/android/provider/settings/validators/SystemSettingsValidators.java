@@ -20,6 +20,7 @@ import static android.provider.settings.validators.SettingsValidators.ANY_INTEGE
 import static android.provider.settings.validators.SettingsValidators.ANY_STRING_VALIDATOR;
 import static android.provider.settings.validators.SettingsValidators.BOOLEAN_VALIDATOR;
 import static android.provider.settings.validators.SettingsValidators.COMPONENT_NAME_VALIDATOR;
+import static android.provider.settings.validators.SettingsValidators.CUSTOM_VIBRATION_PATTERN_VALIDATOR;
 import static android.provider.settings.validators.SettingsValidators.FONT_SCALE_VALIDATOR;
 import static android.provider.settings.validators.SettingsValidators.LENIENT_IP_ADDRESS_VALIDATOR;
 import static android.provider.settings.validators.SettingsValidators.NON_NEGATIVE_FLOAT_VALIDATOR;
@@ -283,6 +284,8 @@ public class SystemSettingsValidators {
                         return true;
                     }
                 });
-
+        VALIDATORS.put(System.CUSTOM_RINGTONE_VIBRATION_PATTERN, CUSTOM_VIBRATION_PATTERN_VALIDATOR);
+        VALIDATORS.put(System.NOTIFICATION_VIBRATION_PATTERN, new InclusiveIntegerRangeValidator(0, 5));
+        VALIDATORS.put(System.CUSTOM_NOTIFICATION_VIBRATION_PATTERN, CUSTOM_VIBRATION_PATTERN_VALIDATOR);
     }
 }
