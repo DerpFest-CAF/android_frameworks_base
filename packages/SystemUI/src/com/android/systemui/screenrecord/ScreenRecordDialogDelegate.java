@@ -80,6 +80,7 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
 
     private final SystemUIDialog.Factory mSystemUIDialogFactory;
     private final UserContextProvider mUserContextProvider;
+    private final Context mUserContext;
     private final RecordingController mController;
     private final Runnable mOnStartRecordingClicked;
     private MaterialSwitch mTapsSwitch;
@@ -107,6 +108,7 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
             @Assisted @Nullable Runnable onStartRecordingClicked) {
         mSystemUIDialogFactory = systemUIDialogFactory;
         mUserContextProvider = userContextProvider;
+        mUserContext = mUserContextProvider.getUserContext();
         mController = controller;
         mOnStartRecordingClicked = onStartRecordingClicked;
     }
@@ -157,6 +159,8 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
         mOptions.setAdapter(a);
         mOptions.setOnItemClickListenerInt((parent, view, position, id) -> {
             mAudioSwitch.setChecked(true);
+            Prefs.putInt(mUserContext, PREFS + PREF_AUDIO, 1);
+            Prefs.putInt(mUserContext, PREFS + PREF_AUDIO_SOURCE, position);
         });
 
         // disable redundant Touch & Hold accessibility action for Switch Access
@@ -170,7 +174,36 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
         });
         mOptions.setLongClickable(false);
 
-        loadPrefs();
+        mTapsSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_TAPS, 0) == 1);
+        mStopDotSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_DOT, 0) == 1);
+        mLowQualitySwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_LOW, 0) == 1);
+        mLongerSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_LONGER, 0) == 1);
+        mAudioSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_AUDIO, 0) == 1);
+        mOptions.setSelection(Prefs.getInt(mUserContext, PREFS + PREF_AUDIO_SOURCE, 0));
+        mSkipSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_SKIP, 0) == 1);
+        mHEVCSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_HEVC, 1) == 1);
+
+        mTapsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Prefs.putInt(mUserContext, PREFS + PREF_TAPS, isChecked ? 1 : 0);
+        });
+        mStopDotSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Prefs.putInt(mUserContext, PREFS + PREF_DOT, isChecked ? 1 : 0);
+        });
+        mLowQualitySwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Prefs.putInt(mUserContext, PREFS + PREF_LOW, isChecked ? 1 : 0);
+        });
+        mLongerSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Prefs.putInt(mUserContext, PREFS + PREF_LONGER, isChecked ? 1 : 0);
+        });
+        mAudioSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Prefs.putInt(mUserContext, PREFS + PREF_AUDIO, isChecked ? 1 : 0);
+        });
+        mSkipSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Prefs.putInt(mUserContext, PREFS + PREF_SKIP, isChecked ? 1 : 0);
+        });
+        mHEVCSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            Prefs.putInt(mUserContext, PREFS + PREF_HEVC, isChecked ? 1 : 0);
+        });
     }
 
     /**
@@ -180,7 +213,6 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
      */
     private void requestScreenCapture(@Nullable MediaProjectionCaptureTarget captureTarget) {
         Context userContext = mUserContextProvider.getUserContext();
-        savePrefs();
         boolean showTaps = mTapsSwitch.isChecked();
         boolean showStopDot = mStopDotSwitch.isChecked();
         boolean lowQuality = mLowQualitySwitch.isChecked();
@@ -221,29 +253,5 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
                 requestScreenCapture(captureTarget);
             }
         }
-    }
-
-    private void savePrefs() {
-        Context userContext = mUserContextProvider.getUserContext();
-        Prefs.putInt(userContext, PREFS + PREF_TAPS, mTapsSwitch.isChecked() ? 1 : 0);
-        Prefs.putInt(userContext, PREFS + PREF_DOT, mStopDotSwitch.isChecked() ? 1 : 0);
-        Prefs.putInt(userContext, PREFS + PREF_LOW, mLowQualitySwitch.isChecked() ? 1 : 0);
-        Prefs.putInt(userContext, PREFS + PREF_LONGER, mLongerSwitch.isChecked() ? 1 : 0);
-        Prefs.putInt(userContext, PREFS + PREF_AUDIO, mAudioSwitch.isChecked() ? 1 : 0);
-        Prefs.putInt(userContext, PREFS + PREF_AUDIO_SOURCE, mOptions.getSelectedItemPosition());
-        Prefs.putInt(userContext, PREFS + PREF_SKIP, mSkipSwitch.isChecked() ? 1 : 0);
-        Prefs.putInt(userContext, PREFS + PREF_HEVC, mHEVCSwitch.isChecked() ? 1 : 0);
-    }
-
-    private void loadPrefs() {
-        Context userContext = mUserContextProvider.getUserContext();
-        mTapsSwitch.setChecked(Prefs.getInt(userContext, PREFS + PREF_TAPS, 0) == 1);
-        mStopDotSwitch.setChecked(Prefs.getInt(userContext, PREFS + PREF_DOT, 0) == 1);
-        mLowQualitySwitch.setChecked(Prefs.getInt(userContext, PREFS + PREF_LOW, 0) == 1);
-        mLongerSwitch.setChecked(Prefs.getInt(userContext, PREFS + PREF_LONGER, 0) == 1);
-        mAudioSwitch.setChecked(Prefs.getInt(userContext, PREFS + PREF_AUDIO, 0) == 1);
-        mOptions.setSelection(Prefs.getInt(userContext, PREFS + PREF_AUDIO_SOURCE, 0));
-        mSkipSwitch.setChecked(Prefs.getInt(userContext, PREFS + PREF_SKIP, 0) == 1);
-        mHEVCSwitch.setChecked(Prefs.getInt(userContext, PREFS + PREF_HEVC, 1) == 1);
     }
 }

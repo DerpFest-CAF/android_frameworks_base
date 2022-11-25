@@ -198,8 +198,10 @@ class ScreenRecordPermissionDialogDelegate(
             )
         a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         options.adapter = a
-        options.setOnItemClickListenerInt { _: AdapterView<*>?, _: View?, _: Int, _: Long ->
+        options.setOnItemClickListenerInt { _: AdapterView<*>?, _: View?, position: Int, _: Long ->
             audioSwitch.isChecked = true
+            Prefs.putInt(context, PREF_AUDIO, 1);
+            Prefs.putInt(context, PREF_AUDIO_SOURCE, position);
         }
 
         // disable redundant Touch & Hold accessibility action for Switch Access
@@ -215,7 +217,36 @@ class ScreenRecordPermissionDialogDelegate(
             }
         options.isLongClickable = false
 
-        loadPrefs();
+        tapsSwitch.isChecked = Prefs.getInt(context, PREF_TAPS, 0) == 1
+        stopDotSwitch.isChecked = Prefs.getInt(context, PREF_DOT, 0) == 1
+        lowQualitySwitch.isChecked = Prefs.getInt(context, PREF_LOW, 0) == 1
+        longerDurationSwitch.isChecked = Prefs.getInt(context, PREF_LONGER, 0) == 1
+        audioSwitch.isChecked = Prefs.getInt(context, PREF_AUDIO, 0) == 1
+        options.setSelection(Prefs.getInt(context, PREF_AUDIO_SOURCE, 0))
+        skipTimeSwitch.isChecked = Prefs.getInt(context, PREF_SKIP, 0) == 1
+        hevcSwitch.isChecked = Prefs.getInt(context, PREF_HEVC, 1) == 1
+
+        tapsSwitch.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.putInt(context, PREF_TAPS, if (isChecked) 1 else 0)
+        }
+        stopDotSwitch.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.putInt(context, PREF_DOT, if (isChecked) 1 else 0)
+        }
+        lowQualitySwitch.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.putInt(context, PREF_LOW, if (isChecked) 1 else 0)
+        }
+        longerDurationSwitch.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.putInt(context, PREF_LONGER, if (isChecked) 1 else 0)
+        }
+        audioSwitch.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.putInt(context, PREF_AUDIO, if (isChecked) 1 else 0)
+        }
+        skipTimeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.putInt(context, PREF_SKIP, if (isChecked) 1 else 0)
+        }
+        hevcSwitch.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.putInt(context, PREF_HEVC, if (isChecked) 1 else 0)
+        }
     }
 
     override fun onItemSelected(adapterView: AdapterView<*>?, view: View, pos: Int, id: Long) {
@@ -267,33 +298,8 @@ class ScreenRecordPermissionDialogDelegate(
                 RecordingService.getStopIntent(userContext),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-        savePrefs();
         controller.startCountdown(if (skipTimeSwitch.isChecked) NO_DELAY else DELAY_MS,
                 INTERVAL_MS, startIntent, stopIntent)
-    }
-
-    private fun savePrefs() {
-        val userContext = userContextProvider.userContext
-        Prefs.putInt(userContext, PREF_TAPS, if (tapsSwitch.isChecked) 1 else 0)
-        Prefs.putInt(userContext, PREF_DOT, if (stopDotSwitch.isChecked) 1 else 0)
-        Prefs.putInt(userContext, PREF_LOW, if (lowQualitySwitch.isChecked) 1 else 0)
-        Prefs.putInt(userContext, PREF_LONGER, if (longerDurationSwitch.isChecked) 1 else 0)
-        Prefs.putInt(userContext, PREF_AUDIO, if (audioSwitch.isChecked) 1 else 0)
-        Prefs.putInt(userContext, PREF_AUDIO_SOURCE, options.selectedItemPosition)
-        Prefs.putInt(userContext, PREF_SKIP, if (skipTimeSwitch.isChecked) 1 else 0)
-        Prefs.putInt(userContext, PREF_HEVC, if (hevcSwitch.isChecked) 1 else 0)
-    }
-
-    private fun loadPrefs() {
-        val userContext = userContextProvider.userContext
-        tapsSwitch.isChecked = Prefs.getInt(userContext, PREF_TAPS, 0) == 1
-        stopDotSwitch.isChecked = Prefs.getInt(userContext, PREF_DOT, 0) == 1
-        lowQualitySwitch.isChecked = Prefs.getInt(userContext, PREF_LOW, 0) == 1
-        longerDurationSwitch.isChecked = Prefs.getInt(userContext, PREF_LONGER, 0) == 1
-        audioSwitch.isChecked = Prefs.getInt(userContext, PREF_AUDIO, 0) == 1
-        options.setSelection(Prefs.getInt(userContext, PREF_AUDIO_SOURCE, 0))
-        skipTimeSwitch.isChecked = Prefs.getInt(userContext, PREF_SKIP, 0) == 1
-        hevcSwitch.isChecked = Prefs.getInt(userContext, PREF_HEVC, 1) == 1
     }
 
     private inner class CaptureTargetResultReceiver() :
