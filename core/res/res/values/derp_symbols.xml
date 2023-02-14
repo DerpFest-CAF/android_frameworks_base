@@ -19,4 +19,7 @@
 
     <!-- For dynamic default font styles -->
     <java-symbol type="string" name="config_bodyFontFamily" />
+
+    <!-- Whether to use Richtap vibration -->
+    <java-symbol type="bool" name="config_usesRichtapVibration" />
 </resources>
