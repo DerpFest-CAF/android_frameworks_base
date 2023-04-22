@@ -133,9 +133,7 @@ public class ClockController {
             String chipStyleUri = "sb_date_bg" + String.valueOf(mClockChipStyle);
             int resId = mContext.getResources().getIdentifier(chipStyleUri, "drawable", "com.android.systemui");
             vClock.setBackgroundResource(resId);
-            int paddingHorizontal = mContext.getResources().getDimensionPixelSize(R.dimen.sb_chip_padding_horizontal);
-            int paddingVertical = mContext.getResources().getDimensionPixelSize(R.dimen.sb_chip_padding_vertical);
-            vClock.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
+            vClock.setPadding(10,2,10,2);
             vClock.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         } else {
             int clockPaddingStart = mContext.getResources().getDimensionPixelSize(
