@@ -128,6 +128,22 @@ public class ThemeOverlayApplier implements Dumpable {
             "com.android.systemui.brightness_slider.filled";
     static final String OVERLAY_BRIGHTNESS_SLIDER_THIN =
             "com.android.systemui.brightness_slider.thin";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_CYBERPUNK =
+            "com.android.systemui.brightness_slider.cyberpunk";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_GRADIENTROUNDEDBAR =
+            "com.android.systemui.brightness_slider.gradientroundedbar";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_OUTLINE =
+            "com.android.systemui.brightness_slider.outline";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_SHADED =
+            "com.android.systemui.brightness_slider.shaded";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_TRANSLUCENT =
+            "com.android.systemui.brightness_slider.translucent";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_LEAFYOUTLINE =
+            "com.android.systemui.brightness_slider.leafyoutline";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_MINIMALTHUMB =
+            "com.android.systemui.brightness_slider.minimalthumb";
+    static final String OVERLAY_BRIGHTNESS_SLIDER_ROUNDEDCLIP =
+            "com.android.systemui.brightness_slider.roundedclip";
 
     /*
      * All theme customization categories used by the system, in order that they should be applied,
@@ -160,7 +176,15 @@ public class ThemeOverlayApplier implements Dumpable {
     static final List<String> BRIGHTNESS_SLIDER_OVERLAYS = Lists.newArrayList(
             "",
             OVERLAY_BRIGHTNESS_SLIDER_FILLED,
-            OVERLAY_BRIGHTNESS_SLIDER_THIN);
+            OVERLAY_BRIGHTNESS_SLIDER_THIN,
+            OVERLAY_BRIGHTNESS_SLIDER_CYBERPUNK,
+            OVERLAY_BRIGHTNESS_SLIDER_GRADIENTROUNDEDBAR,
+            OVERLAY_BRIGHTNESS_SLIDER_OUTLINE,
+            OVERLAY_BRIGHTNESS_SLIDER_SHADED,
+            OVERLAY_BRIGHTNESS_SLIDER_TRANSLUCENT,
+            OVERLAY_BRIGHTNESS_SLIDER_LEAFYOUTLINE,
+            OVERLAY_BRIGHTNESS_SLIDER_MINIMALTHUMB,
+            OVERLAY_BRIGHTNESS_SLIDER_ROUNDEDCLIP);
 
     /* Allowed overlay categories for each target package. */
     private final Map<String, Set<String>> mTargetPackageToCategories = new ArrayMap<>();
