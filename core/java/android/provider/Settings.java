@@ -6823,6 +6823,12 @@ public final class Settings {
                 Secure.WIFI_WATCHDOG_BACKGROUND_CHECK_TIMEOUT_MS;
 
         /**
+         * Whether to display 4G icon instead LTE
+         * @hide
+         */
+        public static final String SHOW_FOURG_ICON = "show_fourg_icon";
+
+        /**
          * @deprecated Use
          * {@link android.provider.Settings.Secure#WIFI_WATCHDOG_INITIAL_IGNORED_PING_COUNT} instead
          */
