@@ -12,4 +12,9 @@
     <string name="aerr_copy">URL für das Absturzprotokoll kopieren</string>
     <string name="url_copy_success">URL erfolgreich kopiert</string>
     <string name="url_copy_failed">Beim Hochladen des Protokolls zu mkr/bin ist ein Fehler aufgetreten</string>
+
+    <!-- Pocket Lock -->
+    <string name="pocket_lock_message_long_press">Zum Entsperren Ein-/Aus-Taste gedrückt halten</string>
+    <string name="pocket_view_title">Taschenmodus aktiviert</string>
+    <string name="pocket_view_title_cancel">Befreie den markierten oberen Bereich des Geräts oder halte Ein-/Aus-Taste gedrückt, um den Taschenmodus zu beenden</string>
 </resources>
