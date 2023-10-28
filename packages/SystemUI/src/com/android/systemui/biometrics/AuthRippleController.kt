@@ -387,17 +387,16 @@ constructor(
     private val udfpsControllerCallback =
         object : UdfpsController.Callback {
             override fun onFingerDown() {
-                if (Settings.Secure.getInt(sysuiContext.contentResolver,
-                       DerpFestSettings.Secure.UDFPS_ANIM, 0) == 0) {
-                // only show dwell ripple for device entry
-                if (keyguardUpdateMonitor.isFingerprintDetectionRunning) {
-                    showDwellRipple()
+                if (udfpsController?.isAnimationEnabled() == false) {
+                    // only show dwell ripple for device entry
+                    if (keyguardUpdateMonitor.isFingerprintDetectionRunning) {
+                        showDwellRipple()
+                    }
                 }
             }
 
             override fun onFingerUp() {
-                if (Settings.Secure.getInt(sysuiContext.contentResolver,
-                       DerpFestSettings.Secure.UDFPS_ANIM, 0) == 0) {
+                if (udfpsController?.isAnimationEnabled() == false) {
                     mView.retractDwellRipple()
                 }
             }
