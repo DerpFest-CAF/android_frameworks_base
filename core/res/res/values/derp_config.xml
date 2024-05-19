@@ -82,5 +82,8 @@
         <item>com.truecaller</item>
         <item>com.gaana</item>
         <item>com.facebook.katana.LoginActivity</item>
+        <item>com.coolapk.market</item>
+        <item>com.xunmeng.pinduoduo</item>
+        <item>com.kuaiduizuoye.scan</item>
     </string-array>
 </resources>
