@@ -24,6 +24,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.hardware.fingerprint.FingerprintSensorPropertiesInternal;
@@ -41,18 +42,18 @@ import android.widget.ImageView;
 import android.graphics.Rect;
 
 import com.android.systemui.Dependency;
+import com.android.systemui.biometrics.AuthController;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.res.R;
 import org.derpfest.providers.DerpFestSettings;
 
 public class UdfpsAnimation extends ImageView {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private static final String LOG_TAG = "UdfpsAnimations";
 
     private Context mContext;
     private int mAnimationSize;
-    private int mAnimationOffset;
     private AnimationDrawable recognizingAnim;
 
     private final WindowManager.LayoutParams mAnimParams = new WindowManager.LayoutParams();
@@ -69,14 +70,19 @@ public class UdfpsAnimation extends ImageView {
 
     private Resources mApkResources;
 
+    private final AuthController mAuthController;
+    private final FingerprintSensorPropertiesInternal mProps;
+
     public UdfpsAnimation(Context context, WindowManager windowManager,
-           FingerprintSensorPropertiesInternal props) {
+           FingerprintSensorPropertiesInternal props, AuthController authController) {
         super(context);
         mContext = context;
+        mAuthController = authController;
+        mProps = props;
 
         mWindowManager = windowManager;
 
-        final float scaleFactor = DisplayUtils.getScaleFactor(mContext);
+        float scaleFactor = getDisplayFactor();
 
         mMaxBurnInOffsetX = (int) (context.getResources()
             .getDimensionPixelSize(R.dimen.udfps_burn_in_offset_x) * scaleFactor);
@@ -87,7 +93,6 @@ public class UdfpsAnimation extends ImageView {
                 com.android.internal.R.string.config_udfps_animation_customization_package);
 
         mAnimationSize = mContext.getResources().getDimensionPixelSize(R.dimen.udfps_animation_size);
-        mAnimationOffset = (int) (mContext.getResources().getDimensionPixelSize(R.dimen.udfps_animation_offset) * scaleFactor);
 
         mAnimParams.height = mAnimationSize;
         mAnimParams.width = mAnimationSize;
@@ -98,8 +103,8 @@ public class UdfpsAnimation extends ImageView {
                 | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                 | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         mAnimParams.gravity = Gravity.TOP | Gravity.CENTER;
-        mAnimParams.y = (int) (props.getLocation().sensorLocationY * scaleFactor) - (int) (props.getLocation().sensorRadius * scaleFactor)
-                - (mAnimationSize / 2) + mAnimationOffset;
+
+        updatePosition();
 
         try {
             PackageManager pm = mContext.getPackageManager();
@@ -152,6 +157,33 @@ public class UdfpsAnimation extends ImageView {
 
     public boolean isAnimationEnabled() {
         return recognizingAnim != null;
+    }
+    
+    private float getDisplayFactor() {
+        return DisplayUtils.getScaleFactor(mContext);
+    }
+    
+    public void updatePosition() {
+        Point displaySize = new Point();
+        mWindowManager.getDefaultDisplay().getRealSize(displaySize);
+        boolean isFullResolution = displaySize.y > 3000; 
+        Point udfpsLocation = mAuthController.getUdfpsLocation();
+        float scaleFactor = getDisplayFactor();
+        float udfpsRadius = isFullResolution ? mAuthController.getUdfpsRadius() : mProps.getLocation().sensorRadius;
+        float udfpsLocationY = isFullResolution && udfpsLocation != null ? udfpsLocation.y : mProps.getLocation().sensorLocationY;
+        int animationOffset = (int) (mContext.getResources().getDimensionPixelSize(R.dimen.udfps_animation_offset) * scaleFactor);
+        mAnimParams.y = (int) (udfpsLocationY * scaleFactor) - (int) (udfpsRadius * scaleFactor)
+                        - (mAnimationSize / 2) + animationOffset;
+        if (DEBUG) {
+            Log.d(LOG_TAG, "updatePosition: displaySize=" + displaySize + 
+                           ", isFullResolution=" + isFullResolution + 
+                           ", udfpsLocation=" + udfpsLocation + 
+                           ", udfpsRadius=" + udfpsRadius + 
+                           ", scaleFactor=" + scaleFactor + 
+                           ", udfpsLocationY=" + udfpsLocationY + 
+                           ", animationOffset=" + animationOffset + 
+                           ", mAnimParams.y=" + mAnimParams.y);
+        }
     }
 
     public void show() {
