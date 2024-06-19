@@ -6419,6 +6419,19 @@ public final class Settings {
         public static final String LOCKSCREEN_ENABLE_POWER_MENU = "lockscreen_enable_power_menu";
 
         /**
+         * Whether to enable brightness slider haptic feedbacks
+         * @hide
+         */
+        @Readable
+        public static final String BRIGHTNESS_SLIDER_HAPTICS = "brightness_slider_haptics";
+        /**
+         * Whether to enable volume dialog slider haptic feedbacks
+         * @hide
+         */
+        @Readable
+        public static final String VOLUME_PANEL_HAPTICS = "volume_panel_haptics";
+
+        /**
          * IMPORTANT: If you add a new public settings you also have to add it to
          * PUBLIC_SETTINGS below. If the new setting is hidden you have to add
          * it to PRIVATE_SETTINGS below. Also add a validator that can validate
