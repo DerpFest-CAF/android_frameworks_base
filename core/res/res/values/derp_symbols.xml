@@ -97,4 +97,7 @@
 
     <!-- Bootleg unneccesary gradient declaration | Just for our shishu bars -->
     <java-symbol type="color" name="bootleg_accent_gradient_end_color" />
+
+    <!-- Pulse brightness -->
+    <java-symbol type="integer" name="config_screenBrightnessPulse" />
 </resources>

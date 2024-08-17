@@ -6633,6 +6633,23 @@ public final class Settings {
         public static final String STATUS_BAR_CUSTOM_HEADER_HEIGHT = "status_bar_custom_header_height";
 
         /**
+         * User definable value of pulse notification screen brightness
+         * @hide
+         */
+        public static final String PULSE_BRIGHTNESS = "pulse_brightness";
+
+        /**
+         * User definable value of aod screen brightness
+         * @hide
+         */
+        public static final String DOZE_BRIGHTNESS = "doze_brightness";
+
+        /**
+         * @hide
+         */
+        public static final String DOZE_BRIGHTNESS_FORCE = "doze_brightness_force";
+
+        /**
          * IMPORTANT: If you add a new public settings you also have to add it to
          * PUBLIC_SETTINGS below. If the new setting is hidden you have to add
          * it to PRIVATE_SETTINGS below. Also add a validator that can validate
