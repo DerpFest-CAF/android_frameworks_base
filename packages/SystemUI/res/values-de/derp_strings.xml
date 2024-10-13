@@ -86,4 +86,8 @@
 
     <!-- Name of the VoWiFi status bar icon. -->
     <string name="status_bar_vowifi">WLAN-Anruf (VoWiFi)</string>
+
+    <!-- 4G icon -->
+    <string name="show_fourg_icon_title">4G-Symbol</string>
+    <string name="show_fourg_icon_summary">4G-Symbol anstelle von LTE anzeigen</string>
 </resources>
