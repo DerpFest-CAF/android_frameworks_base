@@ -95,4 +95,8 @@
     <string name="usb_use_tethering">USB-Tethering</string>
     <string name="usb_use_MIDI">MIDI</string>
     <string name="usb_use">USB verwenden für</string>
+
+    <!-- 4G icon -->
+    <string name="show_fourg_icon_title">4G-Symbol</string>
+    <string name="show_fourg_icon_summary">4G-Symbol anstelle von LTE anzeigen</string>
 </resources>
