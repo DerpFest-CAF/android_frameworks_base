@@ -90,4 +90,8 @@
     <!-- 4G icon -->
     <string name="show_fourg_icon_title">4G-Symbol</string>
     <string name="show_fourg_icon_summary">4G-Symbol anstelle von LTE anzeigen</string>
+
+    <!-- DerpFest logo -->
+    <string name="derp_logo_title">DerpFest swag</string>
+    <string name="derp_logo_summary">Lass alle wissen, dass du DerpFest benutzt, wenn sie deinen Bildschirm sehen</string>
 </resources>
