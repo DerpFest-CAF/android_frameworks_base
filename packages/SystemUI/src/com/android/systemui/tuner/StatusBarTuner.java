@@ -30,9 +30,11 @@ import com.android.systemui.res.R;
 public class StatusBarTuner extends PreferenceFragment {
 
     private static final String SHOW_FOURG = "show_fourg";
+    private static final String KEY_STATUS_BAR_LOGO = "status_bar_logo";
 
     private MetricsLogger mMetricsLogger;
     private SwitchPreferenceCompat mShowFourG;
+    private SwitchPreferenceCompat mShowDerpLogo;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -41,6 +43,11 @@ public class StatusBarTuner extends PreferenceFragment {
         mShowFourG = (SwitchPreferenceCompat) findPreference(SHOW_FOURG);
         mShowFourG.setChecked(Settings.System.getIntForUser(getActivity().getContentResolver(),
             Settings.System.SHOW_FOURG_ICON, 0,
+            UserHandle.USER_CURRENT) == 1);
+
+        mShowDerpLogo = (SwitchPreferenceCompat) findPreference(KEY_STATUS_BAR_LOGO);
+        mShowDerpLogo.setChecked(Settings.System.getIntForUser(getActivity().getContentResolver(),
+            Settings.System.STATUS_BAR_LOGO, 0,
             UserHandle.USER_CURRENT) == 1);
     }
 
@@ -68,6 +75,12 @@ public class StatusBarTuner extends PreferenceFragment {
             boolean checked = ((SwitchPreferenceCompat)preference).isChecked();
             Settings.System.putIntForUser(getActivity().getContentResolver(),
                     Settings.System.SHOW_FOURG_ICON, checked ? 1 : 0,
+                    UserHandle.USER_CURRENT);
+            return true;
+        } else if (preference == mShowDerpLogo) {
+            boolean checked = ((SwitchPreferenceCompat)preference).isChecked();
+            Settings.System.putIntForUser(getActivity().getContentResolver(),
+                    Settings.System.STATUS_BAR_LOGO, checked ? 1 : 0,
                     UserHandle.USER_CURRENT);
             return true;
         }
