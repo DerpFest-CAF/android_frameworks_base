@@ -113,6 +113,14 @@
         android:key="airplane"
         android:title="@string/status_bar_airplane" />
 
+    <SwitchPreferenceCompat
+        android:key="show_fourg"
+        android:title="@string/show_fourg_icon_title"
+        android:summary="@string/show_fourg_icon_summary"
+        android:icon="@drawable/ic_statusbar_4g_mobiledata"
+        android:dependency="mobile"
+        android:defaultValue="false" />
+
     <com.android.systemui.tuner.StatusBarSwitch
         android:icon="@drawable/ic_statusbar_roaming"
         android:key="roaming"
