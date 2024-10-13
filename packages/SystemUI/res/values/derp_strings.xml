@@ -16,6 +16,7 @@
 
     <!-- Status bar -->
     <string name="status_bar_icons_title">Status bar icons</string>
+    <string name="misc_statusbar_items_category_title">Misc</string>
 
     <!-- Advanced restart menu -->
     <!-- Button to indicate more options -->
@@ -116,4 +117,8 @@
     <!-- 4G icon -->
     <string name="show_fourg_icon_title">4G icon</string>
     <string name="show_fourg_icon_summary">Show 4G instead of LTE icon in statusbar</string>
+
+    <!-- DerpFest logo -->
+    <string name="derp_logo_title">DerpFest swag</string>
+    <string name="derp_logo_summary">Let everyone know that you\'re using DerpFest when they see your screen</string>
 </resources>
