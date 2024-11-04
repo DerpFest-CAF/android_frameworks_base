@@ -86,4 +86,13 @@
 
     <!-- Name of the VoWiFi status bar icon. -->
     <string name="status_bar_vowifi">WLAN-Anruf (VoWiFi)</string>
+
+    <!-- USB function dialog - copied from Settings -->
+    <string name="usb_use_charging_only">Keine Datenübertragung</string>
+    <string name="usb_use_file_transfers">Datenübertragung</string>
+    <string name="usb_use_photo_transfers">PTP</string>
+    <string name="usb_use_uvc_webcam">Webcam</string>
+    <string name="usb_use_tethering">USB-Tethering</string>
+    <string name="usb_use_MIDI">MIDI</string>
+    <string name="usb_use">USB verwenden für</string>
 </resources>
