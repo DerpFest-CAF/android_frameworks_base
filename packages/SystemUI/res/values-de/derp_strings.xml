@@ -101,4 +101,10 @@
 
     <!-- Text while recognizing face -->
     <string name="face_unlock_recognizing">Gesichtserkennung...</string>
+
+    <!-- Volume Tile -->
+    <string name="quick_settings_volume_tile_label">Lautstärke</string>
+    <string name="quick_settings_volume_tile_muted">Stumm</string>
+    <string name="quick_settings_volume_tile_low">Leise</string>
+    <string name="quick_settings_volume_tile_high">Laut</string>
 </resources>
