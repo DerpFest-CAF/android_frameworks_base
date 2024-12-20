@@ -70,7 +70,6 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
     private static final String TAG = "ScreenRecordDialog";
     private static final String PREFS = "screenrecord_";
     private static final String PREF_TAPS = "show_taps";
-    private static final String PREF_DOT = "show_dot";
     private static final String PREF_LOW = "use_low_quality";
     private static final String PREF_LONGER = "use_longer_timeout";
     private static final String PREF_HEVC = "use_hevc";
@@ -84,7 +83,6 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
     private final RecordingController mController;
     private final Runnable mOnStartRecordingClicked;
     private MaterialSwitch mTapsSwitch;
-    private MaterialSwitch mStopDotSwitch;
     private MaterialSwitch mLowQualitySwitch;
     private MaterialSwitch mLongerSwitch;
     private MaterialSwitch mHEVCSwitch;
@@ -147,7 +145,6 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
         mAudioSwitch = dialog.findViewById(R.id.screenrecord_audio_switch);
         mTapsSwitch = dialog.findViewById(R.id.screenrecord_taps_switch);
         mSkipSwitch = dialog.findViewById(R.id.screenrecord_skip_switch);
-        mStopDotSwitch = dialog.findViewById(R.id.screenrecord_stopdot_switch);
         mLowQualitySwitch = dialog.findViewById(R.id.screenrecord_lowquality_switch);
         mLongerSwitch = dialog.findViewById(R.id.screenrecord_longer_timeout_switch);
         mHEVCSwitch = dialog.findViewById(R.id.screenrecord_hevc_switch);
@@ -175,7 +172,6 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
         mOptions.setLongClickable(false);
 
         mTapsSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_TAPS, 0) == 1);
-        mStopDotSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_DOT, 0) == 1);
         mLowQualitySwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_LOW, 0) == 1);
         mLongerSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_LONGER, 0) == 1);
         mAudioSwitch.setChecked(Prefs.getInt(mUserContext, PREFS + PREF_AUDIO, 0) == 1);
@@ -185,9 +181,6 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
 
         mTapsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             Prefs.putInt(mUserContext, PREFS + PREF_TAPS, isChecked ? 1 : 0);
-        });
-        mStopDotSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            Prefs.putInt(mUserContext, PREFS + PREF_DOT, isChecked ? 1 : 0);
         });
         mLowQualitySwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             Prefs.putInt(mUserContext, PREFS + PREF_LOW, isChecked ? 1 : 0);
@@ -214,7 +207,6 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
     private void requestScreenCapture(@Nullable MediaProjectionCaptureTarget captureTarget) {
         Context userContext = mUserContextProvider.getUserContext();
         boolean showTaps = mTapsSwitch.isChecked();
-        boolean showStopDot = mStopDotSwitch.isChecked();
         boolean lowQuality = mLowQualitySwitch.isChecked();
         boolean longerDuration = mLongerSwitch.isChecked();
         boolean skipTime = mSkipSwitch.isChecked();
@@ -227,7 +219,7 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
                 RecordingService.getStartIntent(
                         userContext, Activity.RESULT_OK,
                         audioMode.ordinal(), showTaps, captureTarget,
-                        showStopDot, lowQuality, longerDuration, hevc),
+                        lowQuality, longerDuration, hevc),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stopIntent = PendingIntent.getService(userContext,
                 RecordingService.REQUEST_CODE,
