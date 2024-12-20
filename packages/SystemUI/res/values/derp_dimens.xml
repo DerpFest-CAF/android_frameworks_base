@@ -24,9 +24,6 @@
     <!-- Size to enlarge Enrollment GHBM Dot Size by in DP. -->
     <dimen name="udfps_enroll_dot_additional_size">0dp</dimen>
 
-    <!-- Screen Record -->
-    <dimen name="screenrecord_dot_size">48dp</dimen>
-
     <!-- HD calling icon -->
     <dimen name="signal_icon_viewport_size">24dp</dimen>
 
