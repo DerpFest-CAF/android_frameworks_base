@@ -134,4 +134,7 @@
     <string name="quick_settings_volume_tile_muted">Muted</string>
     <string name="quick_settings_volume_tile_low">Low</string>
     <string name="quick_settings_volume_tile_high">High</string>
+
+    <!-- Toast for timer chips long press -->
+    <string name="chip_longpress_hint">Long press to directly stop</string>
 </resources>
