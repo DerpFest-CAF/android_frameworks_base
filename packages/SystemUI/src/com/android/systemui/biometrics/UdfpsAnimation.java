@@ -45,6 +45,7 @@ import com.android.systemui.Dependency;
 import com.android.systemui.biometrics.AuthController;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.res.R;
+ 
 import org.derpfest.providers.DerpFestSettings;
 
 public class UdfpsAnimation extends ImageView {
@@ -188,19 +189,23 @@ public class UdfpsAnimation extends ImageView {
 
     public void show() {
         if (mIsKeyguard && isAnimationEnabled()) {
-            try {
-                if (getWindowToken() == null) {
-                    mWindowManager.addView(this, mAnimParams);
-                } else {
-                    mWindowManager.updateViewLayout(this, mAnimParams);
-                }
-            } catch (RuntimeException e) {
+            showAnimation();
+        }
+    }
+
+    private void showAnimation() {
+        try {
+            if (getWindowToken() == null) {
+                mWindowManager.addView(this, mAnimParams);
+            } else {
+                mWindowManager.updateViewLayout(this, mAnimParams);
+            }
+        } catch (RuntimeException e) {
                 e.printStackTrace();
                 return;
-            }
-            if (recognizingAnim != null) {
-                recognizingAnim.start();
-            }
+        }
+        if (recognizingAnim != null) {
+            recognizingAnim.start();
         }
     }
 
