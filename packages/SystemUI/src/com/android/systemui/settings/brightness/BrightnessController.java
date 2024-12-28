@@ -36,6 +36,8 @@ import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.Vibrator;
+import android.os.VibrationEffect;
 import android.provider.Settings;
 import android.service.vr.IVrManager;
 import android.service.vr.IVrStateCallbacks;
@@ -118,6 +120,11 @@ public class BrightnessController implements ToggleSlider.Listener, MirroredBrig
 
     private ValueAnimator mSliderAnimator;
     private boolean mUserChangedBrightness;
+
+    private final boolean mHasVibrator;
+    private final Vibrator mVibrator;
+    private static final VibrationEffect BRIGHTNESS_ICON_HAPTIC =
+            VibrationEffect.get(VibrationEffect.EFFECT_CLICK);
 
     @Override
     public void setMirror(@Nullable MirrorController controller) {
@@ -345,12 +352,18 @@ public class BrightnessController implements ToggleSlider.Listener, MirroredBrig
         mMainHandler = new Handler(mainLooper, mHandlerCallback);
         mBrightnessObserver = new BrightnessObserver(mMainHandler);
 
+        mVibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
+        mHasVibrator = mVibrator != null && mVibrator.hasVibrator();
+
         mIcon = control.getIcon();
-        mIcon.setOnClickListener(v -> Settings.System.putIntForUser(mContext.getContentResolver(),
-                Settings.System.SCREEN_BRIGHTNESS_MODE, mAutomatic ?
-                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL :
-                    Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
-                UserHandle.USER_CURRENT));
+        mIcon.setOnClickListener(v -> {
+            Settings.System.putIntForUser(mContext.getContentResolver(),
+                    Settings.System.SCREEN_BRIGHTNESS_MODE, mAutomatic ?
+                        Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL :
+                        Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
+                UserHandle.USER_CURRENT);
+            if (mHasVibrator) mVibrator.vibrate(BRIGHTNESS_ICON_HAPTIC);
+        });
     }
 
     public void registerCallbacks() {
