@@ -58,14 +58,6 @@
             android:id="@+id/options_stub"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
-        <TextView
-            android:id="@+id/text_warning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/screenrecord_permission_dialog_warning_entire_screen"
-            style="@style/TextAppearance.Dialog.Body.Message"
-            android:gravity="start"
-            android:textAlignment="gravity"/>
 
         <!-- Buttons -->
         <com.android.internal.widget.ButtonBarLayout
