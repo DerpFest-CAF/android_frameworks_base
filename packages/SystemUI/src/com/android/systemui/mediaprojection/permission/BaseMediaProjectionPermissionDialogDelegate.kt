@@ -52,7 +52,6 @@ abstract class BaseMediaProjectionPermissionDialogDelegate<T : AlertDialog>(
     private lateinit var dialogTitle: TextView
     private lateinit var startButton: TextView
     private lateinit var cancelButton: TextView
-    private lateinit var warning: TextView
     private lateinit var screenShareModeSpinner: Spinner
     protected lateinit var dialog: AlertDialog
     private var shouldLogCancel: Boolean = true
@@ -75,7 +74,6 @@ abstract class BaseMediaProjectionPermissionDialogDelegate<T : AlertDialog>(
         dialog.window?.setGravity(Gravity.CENTER)
         dialog.setContentView(R.layout.screen_share_dialog)
         dialogTitle = dialog.requireViewById(R.id.screen_share_dialog_title)
-        warning = dialog.requireViewById(R.id.text_warning)
         startButton = dialog.requireViewById(android.R.id.button1)
         cancelButton = dialog.requireViewById(android.R.id.button2)
         updateIcon()
@@ -98,9 +96,6 @@ abstract class BaseMediaProjectionPermissionDialogDelegate<T : AlertDialog>(
         setOptionSpecificFields()
         initScreenShareSpinner()
     }
-
-    private val warningText: String
-        get() = dialog.context.getString(selectedScreenShareOption.warningText, appName)
 
     private val startButtonText: String
         get() = dialog.context.getString(selectedScreenShareOption.startButtonText)
@@ -134,7 +129,6 @@ abstract class BaseMediaProjectionPermissionDialogDelegate<T : AlertDialog>(
 
     /** Sets fields on the dialog that change based on which option is selected. */
     private fun setOptionSpecificFields() {
-        warning.text = warningText
         startButton.text = startButtonText
     }
 
