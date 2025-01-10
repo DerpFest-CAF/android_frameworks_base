@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector android:tint="?android:colorControlNormal" android:height="24.0dip" android:width="24.0dip" android:viewportWidth="24.0" android:viewportHeight="24.0"
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <path android:fillColor="@android:color/white" android:pathData="M12,1.75C6.35,1.75,1.75,6.35,1.75,12S6.35,22.25,12,22.25h0.01c2.73,0,5.3-1.06,7.23-2.99c1.94-1.93,3-4.5,3.01-7.24V12 C22.25,6.35,17.65,1.75,12,1.75 M15,13H9c-0.55,0-1-0.45-1-1c0-0.55,0.45-1,1-1h6c0.55,0,1,0.45,1,1C16,12.55,15.55,13,15,13" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="30dp" android:width="30dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="@*android:color/keyguard_avatar_frame_pressed_color" android:pathData="M20.12,8.13L18.7,8.98L4.76,17.34C3.66,15.85 3,14 3,12C3,7.03 7.03,3 12,3C15.58,3 18.68,5.1 20.12,8.13Z"/>
+    <path android:fillColor="@*android:color/keyguard_avatar_frame_pressed_color" android:pathData="M21,12C21,16.97 16.97,21 12,21C9.53,21 7.3,20.01 5.67,18.39L5.76,18.34L19.7,9.98L20.63,9.43C20.87,10.25 21,11.11 21,12Z" android:strokeAlpha="0.4" android:fillAlpha="0.4"/>
 </vector>
