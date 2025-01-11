@@ -12879,7 +12879,7 @@ public final class Settings {
          */
         public static final String PULSE_SMOOTHING_ENABLED = "pulse_smoothing_enabled";
 
-	/**
+        /**
          * Pulse gravity
          * @hide
          */
