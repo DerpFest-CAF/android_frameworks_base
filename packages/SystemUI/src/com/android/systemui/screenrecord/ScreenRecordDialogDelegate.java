@@ -38,7 +38,6 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -53,6 +52,8 @@ import com.android.systemui.statusbar.phone.SystemUIDialog;
 import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
+
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 import java.util.Arrays;
 import java.util.List;
@@ -81,13 +82,13 @@ public class ScreenRecordDialogDelegate implements SystemUIDialog.Delegate {
     private final UserContextProvider mUserContextProvider;
     private final RecordingController mController;
     private final Runnable mOnStartRecordingClicked;
-    private Switch mTapsSwitch;
-    private Switch mStopDotSwitch;
-    private Switch mLowQualitySwitch;
-    private Switch mLongerSwitch;
-    private Switch mHEVCSwitch;
-    private Switch mAudioSwitch;
-    private Switch mSkipSwitch;
+    private MaterialSwitch mTapsSwitch;
+    private MaterialSwitch mStopDotSwitch;
+    private MaterialSwitch mLowQualitySwitch;
+    private MaterialSwitch mLongerSwitch;
+    private MaterialSwitch mHEVCSwitch;
+    private MaterialSwitch mAudioSwitch;
+    private MaterialSwitch mSkipSwitch;
     private Spinner mOptions;
 
     @AssistedFactory
