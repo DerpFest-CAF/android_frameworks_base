@@ -33,7 +33,6 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
-import android.widget.Switch
 import androidx.annotation.LayoutRes
 import androidx.annotation.StyleRes
 import com.android.systemui.Prefs
@@ -50,6 +49,7 @@ import com.android.systemui.plugins.ActivityStarter
 import com.android.systemui.res.R
 import com.android.systemui.settings.UserContextProvider
 import com.android.systemui.statusbar.phone.SystemUIDialog
+import com.google.android.material.materialswitch.MaterialSwitch
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -113,14 +113,14 @@ class ScreenRecordPermissionDialogDelegate(
         ): ScreenRecordPermissionDialogDelegate
     }
 
-    private lateinit var tapsSwitch: Switch
+    private lateinit var tapsSwitch: MaterialSwitch
     private lateinit var tapsView: View
-    private lateinit var audioSwitch: Switch
-    private lateinit var stopDotSwitch: Switch
-    private lateinit var lowQualitySwitch: Switch
-    private lateinit var longerDurationSwitch: Switch
-    private lateinit var skipTimeSwitch: Switch
-    private lateinit var hevcSwitch: Switch
+    private lateinit var audioSwitch: MaterialSwitch
+    private lateinit var stopDotSwitch: MaterialSwitch
+    private lateinit var lowQualitySwitch: MaterialSwitch
+    private lateinit var longerDurationSwitch: MaterialSwitch
+    private lateinit var skipTimeSwitch: MaterialSwitch
+    private lateinit var hevcSwitch: MaterialSwitch
     private lateinit var options: Spinner
 
     override fun createDialog(): SystemUIDialog {
