@@ -12923,6 +12923,13 @@ public final class Settings {
         public static final String VPN_ENFORCE_DNS_STORE = "vpn_enforce_dns_store";
 
         /**
+         * Control whether FLAG_SECURE is ignored for all windows.
+         * @hide
+         */
+        @Readable
+        public static final String WINDOW_IGNORE_SECURE = "window_ignore_secure";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
