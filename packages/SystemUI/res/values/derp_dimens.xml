@@ -29,4 +29,7 @@
 
     <!-- HD calling icon -->
     <dimen name="signal_icon_viewport_size">24dp</dimen>
+
+    <!-- Biometric view -->
+    <dimen name="biometric_indicator_above_margin_bottom">8dp</dimen>
 </resources>
