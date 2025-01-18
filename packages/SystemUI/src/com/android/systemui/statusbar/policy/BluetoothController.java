@@ -47,8 +47,6 @@ public interface BluetoothController extends CallbackController<Callback>, Dumpa
     void removeOnMetadataChangedListener(CachedBluetoothDevice device,
             BluetoothAdapter.OnMetadataChangedListener listener);
 
-    int getBatteryLevel();
-
     public interface Callback {
         void onBluetoothStateChange(boolean enabled);
         void onBluetoothDevicesChanged();
