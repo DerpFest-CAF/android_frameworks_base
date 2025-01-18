@@ -302,7 +302,13 @@ constructor(
                 clock.setTextAppearance(R.style.TextAppearance_QS_Status)
                 date.setTextAppearance(R.style.TextAppearance_QS_Status)
                 mShadeCarrierGroup.updateTextAppearance(R.style.TextAppearance_QS_Status_Carriers)
+                loadConstraints()
+                header.minHeight =
+                    resources.getDimensionPixelSize(R.dimen.large_screen_shade_header_min_height)
+                lastInsets?.let { updateConstraintsForInsets(header, it) }
                 updateResources()
+                updateCarrierGroupPadding()
+                clock.onDensityOrFontScaleChanged()
             }
         }
 
