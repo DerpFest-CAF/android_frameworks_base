@@ -31,6 +31,7 @@ public class TrampolineActivity extends Activity {
         super.onCreate(savedInstanceState);
         showLauncherIcon();
         launchMainActivity();
+        finish();
     }
 
     private void showLauncherIcon() {
