@@ -51,12 +51,19 @@ import com.android.systemui.statusbar.policy.ConfigurationController;
 
 import javax.inject.Inject;
 
+/**
+ * A QSTile that allows the user to control the volume level.
+ */
 public class VolumeControlTile extends QSTileImpl<BooleanState> 
         implements TouchableQSTile, ConfigurationController.ConfigurationListener {
 
     public static final String TILE_SPEC = "volume_control";
 
     private static final String VOLUME_LEVEL_SETTING = "volume_level";
+
+    private static final float MIN_VOLUME_PERCENT = 0f;
+    private static final float MAX_VOLUME_PERCENT = 1f;
+    private static final float VOLUME_DELTA_THRESHOLD = 0.03f;
 
     private final AudioManager mAudioManager;
     private float mCurrentVolumePercent;
@@ -81,10 +88,10 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
                         case MotionEvent.ACTION_MOVE -> {
                             float newPct = motionEvent.getX() / view.getWidth();
                             float deltaPct = Math.abs(newPct - initPct);
-                            if (deltaPct > .03f) {
+                            if (deltaPct > VOLUME_DELTA_THRESHOLD) {
                                 view.getParent().requestDisallowInterceptTouchEvent(true);
                                 moved = true;
-                                mCurrentVolumePercent = Math.max(0f, Math.min(newPct, 1));
+                                mCurrentVolumePercent = Math.max(MIN_VOLUME_PERCENT, Math.min(newPct, MAX_VOLUME_PERCENT));
                                 updateVolumeFromUser();
                             }
                             return true;
@@ -154,6 +161,7 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
     @Override
     protected void handleDestroy() {
         super.handleDestroy();
+        mContext.unregisterReceiver(mVolumeChangeReceiver);
     }
 
     @Override
@@ -228,6 +236,10 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
 
     @Override
     protected void handleUpdateState(BooleanState state, Object arg) {
+        if (state == null) {
+            Log.e(TILE_SPEC, "handleUpdateState: state is null");
+            return;
+        }
         state.state = Tile.STATE_ACTIVE;
         state.label = mHost.getContext().getString(R.string.quick_settings_volume_tile_label) 
             + " - " + Math.round(mCurrentVolumePercent * 100f) + "%";
