@@ -28,6 +28,8 @@ import android.service.quicksettings.Tile;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 
 import androidx.annotation.Nullable;
 
@@ -64,8 +66,11 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
     private static final float MIN_VOLUME_PERCENT = 0f;
     private static final float MAX_VOLUME_PERCENT = 1f;
     private static final float VOLUME_DELTA_THRESHOLD = 0.03f;
+    private static final float VOLUME_STEP_SMALL = 0.05f; // 5% steps for fine control
+    private static final float VOLUME_STEP_LARGE = 0.15f; // 15% steps for quick changes
 
     private final AudioManager mAudioManager;
+    private final Vibrator mVibrator;
     private float mCurrentVolumePercent;
     private int mCurrentVolumeLevel;
     
@@ -74,25 +79,49 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
     private final View.OnTouchListener mTouchListener =
             new View.OnTouchListener() {
                 float initX = 0;
+                float initY = 0;
+                float lastX = 0;
                 float initPct = 0;
                 boolean moved = false;
+                long lastVibration = 0;
 
                 @Override
                 public boolean onTouch(View view, MotionEvent motionEvent) {
                     switch (motionEvent.getAction()) {
                         case MotionEvent.ACTION_DOWN -> {
-                            initX = motionEvent.getX();
-                            initPct = initX / view.getWidth();
+                            initX = lastX = motionEvent.getX();
+                            initY = motionEvent.getY();
+                            initPct = mCurrentVolumePercent;
+                            moved = false;
                             return true;
                         }
                         case MotionEvent.ACTION_MOVE -> {
-                            float newPct = motionEvent.getX() / view.getWidth();
-                            float deltaPct = Math.abs(newPct - initPct);
-                            if (deltaPct > VOLUME_DELTA_THRESHOLD) {
+                            float deltaX = motionEvent.getX() - lastX;
+                            float absDeltaX = Math.abs(deltaX);
+                            
+                            if (absDeltaX > VOLUME_DELTA_THRESHOLD) {
                                 view.getParent().requestDisallowInterceptTouchEvent(true);
                                 moved = true;
-                                mCurrentVolumePercent = Math.max(MIN_VOLUME_PERCENT, Math.min(newPct, MAX_VOLUME_PERCENT));
-                                updateVolumeFromUser();
+                                
+                                // Calculate new volume based on horizontal movement
+                                float volumeStep = (Math.abs(deltaX) > 10f) ? VOLUME_STEP_LARGE : VOLUME_STEP_SMALL;
+                                float volumeChange = (deltaX > 0 ? volumeStep : -volumeStep);
+                                float newVolume = Math.max(MIN_VOLUME_PERCENT, 
+                                    Math.min(mCurrentVolumePercent + volumeChange, MAX_VOLUME_PERCENT));
+                                
+                                // Only update if volume actually changed
+                                if (newVolume != mCurrentVolumePercent) {
+                                    mCurrentVolumePercent = newVolume;
+                                    // Provide haptic feedback on volume change steps
+                                    long now = System.currentTimeMillis();
+                                    if (now - lastVibration > 50) {  // Limit vibration frequency
+                                        mVibrator.vibrate(VibrationEffect.createOneShot(10, 
+                                            VibrationEffect.DEFAULT_AMPLITUDE));
+                                        lastVibration = now;
+                                    }
+                                    updateVolumeFromUser();
+                                }
+                                lastX = motionEvent.getX();
                             }
                             return true;
                         }
@@ -100,8 +129,23 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
                             if (moved) {
                                 moved = false;
                                 updateVolumeFromUser();
+                                // Final haptic feedback
+                                mVibrator.vibrate(VibrationEffect.createOneShot(20, 
+                                    VibrationEffect.DEFAULT_AMPLITUDE));
                             } else {
-                                refreshState(true);
+                                // Handle click - toggle between mute and last non-zero volume
+                                if (mCurrentVolumePercent > 0) {
+                                    // Store current volume and mute
+                                    Settings.System.putFloat(mContext.getContentResolver(), 
+                                        "last_volume_level", mCurrentVolumePercent);
+                                    mCurrentVolumePercent = 0f;
+                                } else {
+                                    // Restore last volume
+                                    float lastVolume = Settings.System.getFloat(mContext.getContentResolver(), 
+                                        "last_volume_level", 0.5f);
+                                    mCurrentVolumePercent = lastVolume;
+                                }
+                                updateVolumeFromUser();
                             }
                             return true;
                         }
@@ -142,6 +186,7 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
                 activityStarter,
                 qsLogger);
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        mVibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
         configurationController.observe(getLifecycle(), this);
         updateVolumeFromSystem();
     }
