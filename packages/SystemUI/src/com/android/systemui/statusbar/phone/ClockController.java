@@ -54,7 +54,9 @@ public class ClockController {
         mLeftClock = statusBar.findViewById(R.id.clock);
         mRightClock = statusBar.findViewById(R.id.clock_right);
 
-        mActiveClock = mLeftClock;
+        mClockPosition = Settings.System.getInt(mContext.getContentResolver(),
+                DerpFestSettings.System.STATUS_BAR_CLOCK, CLOCK_POSITION_LEFT);
+        mActiveClock = getClock();
 
         Uri iconHideList = Settings.Secure.getUriFor(StatusBarIconController.ICON_HIDE_LIST);
         Uri statusBarClock = Settings.System.getUriFor(
@@ -110,8 +112,7 @@ public class ClockController {
             mActiveClock.setClockVisibleByUser(!mDenyListed);
 
             // Add background chip
-            mActiveClock.setBackgroundResource(R.drawable.sb_date_bg);
-            mActiveClock.setPadding(10,2,10,2);
+            addBackgroundChip(mActiveClock);
         });
     }
 
@@ -130,7 +131,7 @@ public class ClockController {
     private void addBackgroundChip(View vClock) {
         if (showClockBg) {
             vClock.setBackgroundResource(R.drawable.sb_date_bg);
-            mActiveClock.setPadding(10,2,10,2);
+            vClock.setPadding(10,2,10,2);
         } else {
             int clockPaddingStart = mContext.getResources().getDimensionPixelSize(
                     R.dimen.status_bar_clock_starting_padding);
