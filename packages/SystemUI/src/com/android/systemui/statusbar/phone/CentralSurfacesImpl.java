@@ -3586,4 +3586,14 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
             ExpandableNotificationRow associatedView) {
         return mNotificationAnimationProvider.getAnimatorController(associatedView);
     }
+
+    @Override
+    public void destroy() {
+        // ... existing cleanup code ...
+        if (mOnGoingActionProgressController != null) {
+            mOnGoingActionProgressController.destroy();
+            mOnGoingActionProgressController = null;
+        }
+        // ... rest of existing cleanup code ...
+    }
 }

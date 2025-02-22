@@ -15,41 +15,28 @@
      limitations under the License.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="60dp"
-    android:layout_height="16sp"
-    android:maxWidth="120dp"
-    android:minWidth="60dp"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ongoing_action_chip"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:layout_gravity="center_vertical|start"
-    android:padding="4sp"
-    android:layout_marginLeft="3dp"
-    android:visibility="gone"
-    android:background="@drawable/action_chip_container_background">
+    android:gravity="center_vertical"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp">
 
     <ImageView
-        android:id="@+id/ongoing_action_app_icon"
-        android:layout_width="8sp"
-        android:layout_height="8sp"
-        android:contentDescription="App icon"
-        android:gravity="center_vertical|start"
-        android:scaleType="centerInside"
-        android:tint="?android:attr/colorForeground"
-        android:src="@android:drawable/sym_def_app_icon" />
-
-    <View
-        android:layout_width="4dp"
-        android:layout_height="0dp" />
+        android:id="@+id/ongoing_action_icon"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="4dp"
+        android:scaleType="fitCenter" />
 
     <ProgressBar
-        android:id="@+id/app_action_progress"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="8sp"
-        android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:indeterminate="false"
-        android:progress="0"
-        android:max="100" />
+        android:id="@+id/ongoing_action_progress"
+        style="@android:style/Widget.Material.ProgressBar.Horizontal"
+        android:layout_width="48dp"
+        android:layout_height="2dp"
+        android:progressDrawable="@drawable/action_chip_progress_drawable" />
 
 </LinearLayout>

@@ -1,0 +1,3 @@
+    <!-- Ongoing action chip -->
+    <string name="ongoing_action_chip_title">Ongoing action chip</string>
+    <string name="ongoing_action_chip_summary">Show progress indicator in status bar for ongoing actions like downloads</string> 
