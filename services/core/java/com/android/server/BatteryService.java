@@ -16,6 +16,7 @@
 
 package com.android.server;
 
+import static android.os.BatteryManager.CHARGING_POLICY_DEFAULT;
 import static android.os.Flags.batteryServiceSupportCurrentAdbCommand;
 import static android.os.Flags.stateOfHealthPublic;
 
@@ -78,6 +79,7 @@ import com.android.server.lights.LogicalLight;
 import motorola.hardware.health.V1_0.BatteryProperties;
 import motorola.hardware.health.V1_0.IMotHealth;
 
+import org.derpfest.health.HealthInterface;
 import org.derpfest.notification.LedValues;
 import org.derpfest.notification.LineageBatteryLights;
 
@@ -145,6 +147,7 @@ public final class BatteryService extends SystemService {
     private static final int BATTERY_PLUGGED_NONE = OsProtoEnums.BATTERY_PLUGGED_NONE; // = 0
 
     private final Context mContext;
+    private HealthInterface mLineageHealthInterface;
     private final IBatteryStats mBatteryStats;
     BinderService mBinderService;
     private final Handler mHandler;
@@ -397,6 +400,16 @@ public final class BatteryService extends SystemService {
                 }
             });
 
+            HealthInterface lineageHealthInterface;
+            try {
+                lineageHealthInterface = HealthInterface.getInstance(mContext);
+            } catch (RuntimeException e) {
+                Slog.e(TAG, "Unable to get HealthInterface instance. Health service is not available.");
+                lineageHealthInterface = null;
+            }
+
+            mLineageHealthInterface = lineageHealthInterface;
+
             // Update light state now that mLineageBatteryLights has been initialized.
             updateLedPulse();
         }
@@ -589,6 +602,13 @@ public final class BatteryService extends SystemService {
                     } catch (RemoteException e) {
                         Slog.e(TAG, "getModBatteryProperties fail!");
                     }
+                }
+                if (mLineageHealthInterface != null) {
+                    int status = mLineageHealthInterface.getChargingControlStatus();
+                    if (status != CHARGING_POLICY_DEFAULT) {
+                        mHealthInfo.chargingState = status;
+                    }
+                    Slog.i(TAG, "[Lineage] Charging control status: " + status);
                 }
                 // Process the new values.
                 processValuesLocked(false);
