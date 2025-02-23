@@ -44,6 +44,7 @@ import com.android.systemui.statusbar.OnGoingActionProgressGroup;
 public class OnGoingActionProgressController implements NotificationListener.NotificationHandler {
     private static final String TAG = "OngoingActionProgressController";
     private static final String ONGOING_ACTION_CHIP_ENABLED = "ongoing_action_chip";
+    private static final String ONGOING_ACTION_CHIP_MONOCHROME = "ongoing_action_chip_monochrome";
 
     private Context mContext;
     private ContentResolver mContentResolver;
@@ -65,6 +66,7 @@ public class OnGoingActionProgressController implements NotificationListener.Not
     private final IconFetcher mIconFetcher;
     private final NotificationListener mNotificationListener;
     private boolean mIsEnabled;
+    private boolean mIsMonochrome;
 
     private boolean mPreviousTrackingProgress = false;
 
@@ -82,7 +84,8 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             super.onChange(selfChange, uri);
-            if (uri.equals(Settings.System.getUriFor(ONGOING_ACTION_CHIP_ENABLED))) {
+            if (uri.equals(Settings.System.getUriFor(ONGOING_ACTION_CHIP_ENABLED)) ||
+                uri.equals(Settings.System.getUriFor(ONGOING_ACTION_CHIP_MONOCHROME))) {
                 updateSettings();
             }
         }
@@ -90,6 +93,9 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         public void register() {
             mContentResolver.registerContentObserver(
                 Settings.System.getUriFor(ONGOING_ACTION_CHIP_ENABLED),
+                false, this, UserHandle.USER_ALL);
+            mContentResolver.registerContentObserver(
+                Settings.System.getUriFor(ONGOING_ACTION_CHIP_MONOCHROME),
                 false, this, UserHandle.USER_ALL);
             // Update initial state
             updateSettings();
@@ -153,21 +159,17 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         Notification notification = sbn.getNotification();
         mCurrentProgressMax = notification.extras.getInt(Notification.EXTRA_PROGRESS_MAX, 100);
         mCurrentProgress = notification.extras.getInt(Notification.EXTRA_PROGRESS, 0);
-        IconFetcher.AdaptiveDrawableResult drawable =
-                mIconFetcher.getMonotonicPackageIcon(sbn.getPackageName());
+        IconFetcher.AdaptiveDrawableResult drawable = mIsMonochrome ?
+                mIconFetcher.getMonotonicPackageIcon(sbn.getPackageName()) :
+                mIconFetcher.getColoredPackageIcon(sbn.getPackageName());
         updateIconImageView(drawable);
         updateViews();
     }
 
     /** Updates icon based on result from IconFetcher @AsyncUnsafe */
     private void updateIconImageView(IconFetcher.AdaptiveDrawableResult drawable) {
-        if (drawable.isAdaptive) {
-            mIconView.setImageTintList(
-                    ColorStateList.valueOf(
-                            getThemeColor(mContext, android.R.attr.colorForeground)));
-        } else {
-            mIconView.setImageTintList(null);
-        }
+        // Clear any previous tint
+        mIconView.setImageTintList(null);
         mIconView.setImageDrawable(drawable.drawable);
     }
 
@@ -302,6 +304,8 @@ public class OnGoingActionProgressController implements NotificationListener.Not
     private void updateSettings() {
         mIsEnabled = Settings.System.getIntForUser(mContentResolver,
             ONGOING_ACTION_CHIP_ENABLED, 1, UserHandle.USER_CURRENT) == 1;
+        mIsMonochrome = Settings.System.getIntForUser(mContentResolver,
+            ONGOING_ACTION_CHIP_MONOCHROME, 0, UserHandle.USER_CURRENT) == 1;
         updateViews();
     }
 

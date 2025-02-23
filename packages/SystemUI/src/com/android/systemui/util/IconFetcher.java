@@ -64,7 +64,6 @@ public class IconFetcher {
      * is extracted and tinted, while non-adaptive icons are directly tinted.
      *
      * @param packageName The package name of the app whose icon is to be fetched.
-     * @param tintColor The color to use for the monotonic tint.
      * @return A monotonic Drawable of the app icon or standard app icon within
      *     AdaptiveDrawableResult
      */
@@ -76,20 +75,40 @@ public class IconFetcher {
 
             if (icon instanceof AdaptiveIconDrawable) {
                 AdaptiveIconDrawable adaptiveIcon = (AdaptiveIconDrawable) icon;
-
                 Drawable foreground = adaptiveIcon.getForeground();
-
                 foreground.setColorFilter(
                         new PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN));
                 return new AdaptiveDrawableResult(true, icon);
             } else {
+                icon.setColorFilter(
+                        new PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN));
                 return new AdaptiveDrawableResult(false, icon);
             }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
             Drawable defaultIcon = mContext.getDrawable(android.R.drawable.sym_def_app_icon);
-            // The icon is not adaptive by default
+            defaultIcon.setColorFilter(
+                    new PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN));
             return new AdaptiveDrawableResult(false, defaultIcon);
+        }
+    }
+
+    /**
+     * Returns the original colored version of the app icon.
+     *
+     * @param packageName The package name of the app whose icon is to be fetched.
+     * @return The original colored app icon within AdaptiveDrawableResult
+     */
+    public AdaptiveDrawableResult getColoredPackageIcon(String packageName) {
+        try {
+            PackageManager packageManager = mContext.getPackageManager();
+            Drawable icon = packageManager.getApplicationIcon(packageName);
+            boolean isAdaptive = icon instanceof AdaptiveIconDrawable;
+            return new AdaptiveDrawableResult(isAdaptive, icon);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return new AdaptiveDrawableResult(false, 
+                mContext.getDrawable(android.R.drawable.sym_def_app_icon));
         }
     }
 }
