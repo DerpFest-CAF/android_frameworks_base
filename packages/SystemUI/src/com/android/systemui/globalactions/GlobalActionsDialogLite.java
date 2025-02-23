@@ -38,7 +38,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
-import android.app.ActivityTaskManager;
 import android.app.Dialog;
 import android.app.IActivityManager;
 import android.app.StatusBarManager;
@@ -612,14 +611,6 @@ public class GlobalActionsDialogLite implements DialogInterface.OnDismissListene
         }
     }
 
-    private boolean isInLockTaskMode() {
-        try {
-            return ActivityTaskManager.getService().isInLockTaskMode();
-        } catch (RemoteException e) {
-            return false;
-        }
-    }
-
     @VisibleForTesting
     protected String[] getDefaultActions() {
         return mResources.getStringArray(R.array.config_globalActionsList);
@@ -682,28 +673,22 @@ public class GlobalActionsDialogLite implements DialogInterface.OnDismissListene
             if (GLOBAL_ACTION_KEY_POWER.equals(actionKey)) {
                 addIfShouldShowAction(tempActions, shutdownAction);
             } else if (GLOBAL_ACTION_KEY_AIRPLANE.equals(actionKey)) {
-                if (!isInLockTaskMode()){
-                    addIfShouldShowAction(tempActions, mAirplaneModeOn);
-                }
+                addIfShouldShowAction(tempActions, mAirplaneModeOn);
             } else if (GLOBAL_ACTION_KEY_SILENT.equals(actionKey)) {
                 if (mShowSilentToggle) {
                     addIfShouldShowAction(tempActions, mSilentModeAction);
                 }
             } else if (GLOBAL_ACTION_KEY_USERS.equals(actionKey)) {
-                if (!isInLockTaskMode()){
-                    List<UserInfo> users = mUserManager.getUsers();
-                    if (users.size() > 1) {
-                        addUserActions(mUsersItems, currentUser.get());
-                        addIfShouldShowAction(tempActions, new UsersAction());
-                    }
+                List<UserInfo> users = mUserManager.getUsers();
+                if (users.size() > 1) {
+                    addUserActions(mUsersItems, currentUser.get());
+                    addIfShouldShowAction(tempActions, new UsersAction());
                 }
             } else if (GLOBAL_ACTION_KEY_SETTINGS.equals(actionKey)) {
                 addIfShouldShowAction(tempActions, getSettingsAction());
             } else if (GLOBAL_ACTION_KEY_LOCKDOWN.equals(actionKey)) {
-                if (!isInLockTaskMode()){
-                    if (shouldDisplayLockdown(currentUser.get())) {
-                        addIfShouldShowAction(tempActions, new LockDownAction());
-                    }
+                if (shouldDisplayLockdown(currentUser.get())) {
+                    addIfShouldShowAction(tempActions, new LockDownAction());
                 }
             } else if (GLOBAL_ACTION_KEY_VOICEASSIST.equals(actionKey)) {
                 addIfShouldShowAction(tempActions, getVoiceAssistAction());
