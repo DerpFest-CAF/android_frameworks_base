@@ -28,11 +28,17 @@ import static com.android.systemui.statusbar.notification.interruption.Notificat
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.content.ContentResolver;
+import android.content.Context;
 import android.database.ContentObserver;
 import android.hardware.display.AmbientDisplayConfiguration;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.os.UserHandle;
+import android.provider.Settings;
+import android.provider.Telephony.Sms;
 import android.service.notification.StatusBarNotification;
+import android.telecom.TelecomManager;
 
 import androidx.annotation.NonNull;
 
@@ -87,6 +93,9 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
     private final GlobalSettings mGlobalSettings;
     private final EventLog mEventLog;
     private final Optional<Bubbles> mBubbles;
+    private boolean mLessBoringHeadsUp = false;
+    private TelecomManager mTelecomManager;
+    private Context mContext;
 
     @VisibleForTesting
     protected boolean mUseHeadsUp = false;
@@ -121,6 +130,8 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
 
     @Inject
     public NotificationInterruptStateProviderImpl(
+            Context context,
+            ContentResolver contentResolver,
             PowerManager powerManager,
             AmbientDisplayConfiguration ambientDisplayConfiguration,
             BatteryController batteryController,
@@ -138,6 +149,8 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
             GlobalSettings globalSettings,
             EventLog eventLog,
             Optional<Bubbles> bubbles) {
+        mContext = context;
+        mTelecomManager = (TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
         mPowerManager = powerManager;
         mBatteryController = batteryController;
         mAmbientDisplayConfiguration = ambientDisplayConfiguration;
@@ -154,6 +167,9 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
         mGlobalSettings = globalSettings;
         mEventLog = eventLog;
         mBubbles = bubbles;
+        mLessBoringHeadsUp = Settings.System.getIntForUser(contentResolver,
+                Settings.System.LESS_BORING_HEADS_UP, 0,
+                UserHandle.USER_CURRENT) == 1;
         ContentObserver headsUpObserver = new ContentObserver(mainHandler) {
             @Override
             public void onChange(boolean selfChange) {
@@ -161,6 +177,9 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
                 final boolean settingEnabled = HEADS_UP_OFF
                         != mGlobalSettings.getInt(HEADS_UP_NOTIFICATIONS_ENABLED, HEADS_UP_ON);
                 mUseHeadsUp = ENABLE_HEADS_UP && settingEnabled;
+                mLessBoringHeadsUp = Settings.System.getIntForUser(contentResolver,
+                        Settings.System.LESS_BORING_HEADS_UP, 0,
+                        UserHandle.USER_CURRENT) == 1;
                 mLogger.logHeadsUpFeatureChanged(mUseHeadsUp);
                 if (wasUsing != mUseHeadsUp) {
                     if (!mUseHeadsUp) {
@@ -489,6 +508,11 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
             return false;
         }
 
+        if (mLessBoringHeadsUp && isBoringHeadsUp(entry)) {
+            if (log) mLogger.logNoHeadsUpBoringNotification(entry);
+            return false;
+        }
+
         for (int i = 0; i < mSuppressors.size(); i++) {
             if (mSuppressors.get(i).suppressAwakeHeadsUp(entry)) {
                 if (log) mLogger.logNoHeadsUpSuppressedBy(entry, mSuppressors.get(i));
@@ -707,6 +731,23 @@ public class NotificationInterruptStateProviderImpl implements NotificationInter
         final String packageName = entry.getSbn().getPackageName();
         mUiEventLogger.log(NotificationInterruptEvent.HUN_SUPPRESSED_OLD_WHEN, uid, packageName);
         return true;
+    }
+
+    private boolean isBoringHeadsUp(NotificationEntry entry) {
+        final String packageName = entry.getSbn().getPackageName();
+        final String category = entry.getSbn().getNotification().category;
+
+        final boolean isCategoryAllowed = (category != null) && List.of(
+                Notification.CATEGORY_CALL, Notification.CATEGORY_ALARM,
+                Notification.CATEGORY_REMINDER, Notification.CATEGORY_NAVIGATION
+        ).contains(category);
+
+        final boolean isLessBoring = isCategoryAllowed
+                || entry.getChannel().isImportantConversation()
+                || packageName.equals(mTelecomManager.getDefaultDialerPackage())
+                || packageName.equals(Sms.getDefaultSmsPackage(mContext));
+
+        return !isLessBoring;
     }
 
     public static final long MAX_HUN_WHEN_AGE_MS = 24 * 60 * 60 * 1000;

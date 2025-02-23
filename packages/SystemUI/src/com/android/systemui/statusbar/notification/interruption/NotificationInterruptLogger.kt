@@ -32,7 +32,7 @@ class NotificationInterruptLogger @Inject constructor(
     @NotificationInterruptLog val buffer: LogBuffer
 ) {
     fun logHeadsUpFeatureChanged(useHeadsUp: Boolean) {
-        buffer.log(TAG, INFO, {
+        buffer.log(TAG, DEBUG, {
             bool1 = useHeadsUp
         }, {
             "heads up is enabled=$bool1"
@@ -311,6 +311,14 @@ class NotificationInterruptLogger @Inject constructor(
             str1 = entry.logKey
         }, {
             "No alerting: notification hidden on lock screen: $str1"
+        })
+    }
+
+    fun logNoHeadsUpBoringNotification(entry: NotificationEntry) {
+        buffer.log(TAG, DEBUG, {
+            str1 = entry.logKey
+        }, {
+            "No heads up: boring notification: $str1"
         })
     }
 }
