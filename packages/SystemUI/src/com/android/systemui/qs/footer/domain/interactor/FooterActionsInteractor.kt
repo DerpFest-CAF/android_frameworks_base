@@ -52,6 +52,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import android.util.Log
 
 /** Interactor for the footer actions business logic. */
 interface FooterActionsInteractor {
@@ -115,6 +116,10 @@ constructor(
     broadcastDispatcher: BroadcastDispatcher,
     @Background bgDispatcher: CoroutineDispatcher,
 ) : FooterActionsInteractor {
+    companion object {
+        private const val TAG = "FooterActionsInteractor"
+    }
+
     override val securityButtonConfig: Flow<SecurityButtonConfig?> =
         securityRepository.security.map { security ->
             withContext(bgDispatcher) { qsSecurityFooterUtils.getButtonConfig(security) }
@@ -160,14 +165,27 @@ constructor(
     ) {
         uiEventLogger.log(GlobalActionsDialogLite.GlobalActionsEvent.GA_OPEN_QS)
         if (Settings.Secure.getInt(globalActionsDialogLite.context.getContentResolver(),
-                DerpFestSettings.Secure.POWER_MENU_TYPE, 0) == 0)
-            globalActionsDialogLite.showOrHideDialog(
-                keyguardStateController.isShowing(),
-                /* isDeviceProvisioned= */ true,
-                expandable,
-            )
-        else
+                DerpFestSettings.Secure.POWER_MENU_TYPE, 0) == 0) {
+            val originalClassLoader = Thread.currentThread().getContextClassLoader()
+            try {
+                val pluginContext = globalActionsDialogLite.context
+                Thread.currentThread().setContextClassLoader(pluginContext.classLoader)
+                
+                globalActionsDialogLite.showOrHideDialog(
+                    keyguardStateController.isShowing(),
+                    /* isDeviceProvisioned= */ true,
+                    expandable,
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error showing power menu", e)
+                // Fallback to basic power menu if plugin loading fails
+                globalActionsDialogLite.context.sendBroadcast(Intent("android.intent.action.POWER_MENU"))
+            } finally {
+                Thread.currentThread().setContextClassLoader(originalClassLoader)
+            }
+        } else {
             globalActionsDialogLite.context.sendBroadcast(Intent("android.intent.action.POWER_MENU"))
+        }
     }
 
     override fun showSettings(expandable: Expandable) {
