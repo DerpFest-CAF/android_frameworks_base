@@ -166,11 +166,15 @@ constructor(
         uiEventLogger.log(GlobalActionsDialogLite.GlobalActionsEvent.GA_OPEN_QS)
         if (Settings.Secure.getInt(globalActionsDialogLite.context.getContentResolver(),
                 DerpFestSettings.Secure.POWER_MENU_TYPE, 0) == 0) {
+            // Save current classloader
             val originalClassLoader = Thread.currentThread().getContextClassLoader()
             try {
+                // Set plugin classloader before showing dialog
                 val pluginContext = globalActionsDialogLite.context
-                Thread.currentThread().setContextClassLoader(pluginContext.classLoader)
+                val pluginLoader = pluginContext.classLoader
+                Thread.currentThread().setContextClassLoader(pluginLoader)
                 
+                // Show dialog with plugin classloader active
                 globalActionsDialogLite.showOrHideDialog(
                     keyguardStateController.isShowing(),
                     /* isDeviceProvisioned= */ true,
@@ -181,6 +185,7 @@ constructor(
                 // Fallback to basic power menu if plugin loading fails
                 globalActionsDialogLite.context.sendBroadcast(Intent("android.intent.action.POWER_MENU"))
             } finally {
+                // Always restore original classloader
                 Thread.currentThread().setContextClassLoader(originalClassLoader)
             }
         } else {
