@@ -168,8 +168,12 @@ public class OnGoingActionProgressController implements NotificationListener.Not
 
     /** Updates icon based on result from IconFetcher @AsyncUnsafe */
     private void updateIconImageView(IconFetcher.AdaptiveDrawableResult drawable) {
-        // Clear any previous tint
-        mIconView.setImageTintList(null);
+        if (mIsMonochrome) {
+            mIconView.setImageTintList(ColorStateList.valueOf(
+                    getThemeColor(mContext, android.R.attr.colorForeground)));
+        } else {
+            mIconView.setImageTintList(null);
+        }
         mIconView.setImageDrawable(drawable.drawable);
     }
 
@@ -189,37 +193,14 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         }
     }
 
-    /** Updates progress views @AsyncUnsafe */
+    /** Updates views based on current state */
     private void updateViews() {
-        // Check if tracking state changed or if we're not tracking/enabled
-        if (!mIsEnabled || !mIsTrackingProgress) {
+        if (mIsTrackingProgress && mIsEnabled) {
+            mProgressRootView.setVisibility(View.VISIBLE);
+            mProgressBar.setMax(mCurrentProgressMax);
+            mProgressBar.setProgress(mCurrentProgress);
+        } else {
             mProgressRootView.setVisibility(View.GONE);
-            mPreviousTrackingProgress = mIsTrackingProgress;
-            return;
-        }
-
-        // Update previous tracking state
-        mPreviousTrackingProgress = mIsTrackingProgress;
-
-        // Show and update progress
-        mProgressRootView.setVisibility(View.VISIBLE);
-        if (mCurrentProgressMax == 0) {
-            Log.w(TAG, "updateViews: max progress is 0. Guessing it as 100");
-            mCurrentProgressMax = 100;
-        }
-        
-        // Hide if progress is complete
-        if (mCurrentProgress >= mCurrentProgressMax) {
-            mIsTrackingProgress = false;
-            mProgressRootView.setVisibility(View.GONE);
-            return;
-        }
-
-        Log.d(TAG, "updateViews: " + mCurrentProgress + "/" + mCurrentProgressMax);
-        mProgressBar.setMax(mCurrentProgressMax);
-        mProgressBar.setProgress(mCurrentProgress);
-        if (mCurrentDrawable != null) {
-            mIconView.setImageDrawable(mCurrentDrawable);
         }
     }
 
