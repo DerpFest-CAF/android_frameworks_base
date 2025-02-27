@@ -23,6 +23,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.TypedValue;
 
 /** A class helping to fetch different versions of icons @LineageExtension */
 public class IconFetcher {
@@ -68,7 +69,10 @@ public class IconFetcher {
      *     AdaptiveDrawableResult
      */
     public AdaptiveDrawableResult getMonotonicPackageIcon(String packageName) {
-        int tintColor = Color.WHITE;
+        TypedValue typedValue = new TypedValue();
+        mContext.getTheme().resolveAttribute(android.R.attr.colorForeground, typedValue, true);
+        int tintColor = typedValue.data;
+
         try {
             PackageManager packageManager = mContext.getPackageManager();
             Drawable icon = packageManager.getApplicationIcon(packageName);
