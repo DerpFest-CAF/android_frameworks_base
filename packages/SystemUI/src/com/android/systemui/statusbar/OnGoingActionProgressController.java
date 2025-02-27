@@ -151,6 +151,40 @@ public class OnGoingActionProgressController implements NotificationListener.Not
                 && maxProgressValid;
     }
 
+    /** Updates views based on current state */
+    private void updateViews() {
+        // Check if tracking state changed or if we're not tracking/enabled
+        if (!mIsEnabled || !mIsTrackingProgress) {
+            mProgressRootView.setVisibility(View.GONE);
+            mPreviousTrackingProgress = mIsTrackingProgress;
+            return;
+        }
+
+        // Update previous tracking state
+        mPreviousTrackingProgress = mIsTrackingProgress;
+
+        // Show and update progress
+        mProgressRootView.setVisibility(View.VISIBLE);
+        if (mCurrentProgressMax == 0) {
+            Log.w(TAG, "updateViews: max progress is 0. Guessing it as 100");
+            mCurrentProgressMax = 100;
+        }
+        
+        // Hide if progress is complete
+        if (mCurrentProgress >= mCurrentProgressMax) {
+            mIsTrackingProgress = false;
+            mProgressRootView.setVisibility(View.GONE);
+            return;
+        }
+
+        Log.d(TAG, "updateViews: " + mCurrentProgress + "/" + mCurrentProgressMax);
+        mProgressBar.setMax(mCurrentProgressMax);
+        mProgressBar.setProgress(mCurrentProgress);
+        if (mCurrentDrawable != null) {
+            mIconView.setImageDrawable(mCurrentDrawable);
+        }
+    }
+
     /** Starts tracking progress of certain notification @AsyncUnsafe */
     private void trackProgress(final StatusBarNotification sbn) {
         // Here we set progress tracking and update view if needed
@@ -162,6 +196,7 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         IconFetcher.AdaptiveDrawableResult drawable = mIsMonochrome ?
                 mIconFetcher.getMonotonicPackageIcon(sbn.getPackageName()) :
                 mIconFetcher.getColoredPackageIcon(sbn.getPackageName());
+        mCurrentDrawable = drawable.drawable;
         updateIconImageView(drawable);
         updateViews();
     }
@@ -179,29 +214,14 @@ public class OnGoingActionProgressController implements NotificationListener.Not
 
     /** Updates progress if needed @AsyncUnsafe */
     private void updateProgressIfNeeded(final StatusBarNotification sbn) {
-        if (!mIsTrackingProgress) {
-            Log.wtf(TAG, "Called updateProgress if needed, but we do not tracking anything");
+        if (!mIsTrackingProgress || !sbn.getKey().equals(mTrackedNotificationKey)) {
             return;
         }
-        // Log.d(TAG, "updateProgressIfNeeded: got notification update");
-        Notification notification = sbn.getNotification();
-        if (sbn.getKey().equals(mTrackedNotificationKey)) {
-            mCurrentProgressMax = notification.extras.getInt(Notification.EXTRA_PROGRESS_MAX, 100);
-            mCurrentProgress = notification.extras.getInt(Notification.EXTRA_PROGRESS, 0);
-            Log.d(TAG, "updateProgressIfNeeded: about to updateViews()");
-            updateViews();
-        }
-    }
 
-    /** Updates views based on current state */
-    private void updateViews() {
-        if (mIsTrackingProgress && mIsEnabled) {
-            mProgressRootView.setVisibility(View.VISIBLE);
-            mProgressBar.setMax(mCurrentProgressMax);
-            mProgressBar.setProgress(mCurrentProgress);
-        } else {
-            mProgressRootView.setVisibility(View.GONE);
-        }
+        Notification notification = sbn.getNotification();
+        mCurrentProgressMax = notification.extras.getInt(Notification.EXTRA_PROGRESS_MAX, 100);
+        mCurrentProgress = notification.extras.getInt(Notification.EXTRA_PROGRESS, 0);
+        updateViews();
     }
 
     /**
