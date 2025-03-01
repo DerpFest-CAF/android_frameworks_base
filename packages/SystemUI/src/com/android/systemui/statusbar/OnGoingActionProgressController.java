@@ -155,6 +155,7 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         mCurrentProgress = notification.extras.getInt(Notification.EXTRA_PROGRESS, 0);
         IconFetcher.AdaptiveDrawableResult drawable =
                 mIconFetcher.getMonotonicPackageIcon(sbn.getPackageName());
+        mCurrentDrawable = drawable.drawable;
         updateIconImageView(drawable);
         updateViews();
     }
@@ -177,13 +178,22 @@ public class OnGoingActionProgressController implements NotificationListener.Not
             Log.wtf(TAG, "Called updateProgress if needed, but we do not tracking anything");
             return;
         }
-        // Log.d(TAG, "updateProgressIfNeeded: got notification update");
+        
         Notification notification = sbn.getNotification();
         if (sbn.getKey().equals(mTrackedNotificationKey)) {
+            int oldProgress = mCurrentProgress;
+            int oldMax = mCurrentProgressMax;
+            
             mCurrentProgressMax = notification.extras.getInt(Notification.EXTRA_PROGRESS_MAX, 100);
             mCurrentProgress = notification.extras.getInt(Notification.EXTRA_PROGRESS, 0);
-            Log.d(TAG, "updateProgressIfNeeded: about to updateViews()");
-            updateViews();
+            
+            // Only update views if progress has changed
+            if (oldProgress != mCurrentProgress || oldMax != mCurrentProgressMax) {
+                Log.d(TAG, "updateProgressIfNeeded: progress changed from " + 
+                      oldProgress + "/" + oldMax + " to " + 
+                      mCurrentProgress + "/" + mCurrentProgressMax);
+                updateViews();
+            }
         }
     }
 
@@ -201,24 +211,23 @@ public class OnGoingActionProgressController implements NotificationListener.Not
 
         // Show and update progress
         mProgressRootView.setVisibility(View.VISIBLE);
-        if (mCurrentProgressMax == 0) {
-            Log.w(TAG, "updateViews: max progress is 0. Guessing it as 100");
+        if (mCurrentProgressMax <= 0) {
+            Log.w(TAG, "updateViews: invalid max progress " + mCurrentProgressMax + ", using 100");
             mCurrentProgressMax = 100;
         }
         
         // Hide if progress is complete
         if (mCurrentProgress >= mCurrentProgressMax) {
+            Log.d(TAG, "updateViews: progress complete, hiding chip");
             mIsTrackingProgress = false;
             mProgressRootView.setVisibility(View.GONE);
             return;
         }
 
-        Log.d(TAG, "updateViews: " + mCurrentProgress + "/" + mCurrentProgressMax);
+        Log.d(TAG, "updateViews: updating progress to " + mCurrentProgress + "/" + mCurrentProgressMax);
         mProgressBar.setMax(mCurrentProgressMax);
         mProgressBar.setProgress(mCurrentProgress);
-        if (mCurrentDrawable != null) {
-            mIconView.setImageDrawable(mCurrentDrawable);
-        }
+        // Don't set the drawable here as it's already set in updateIconImageView
     }
 
     /**
@@ -230,7 +239,7 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         Notification notification = sbn.getNotification();
         if (!hasProgress(notification)) {
             // Log.d(TAG, "Got notification without progress");
-            if (sbn.getKey() == mTrackedNotificationKey) {
+            if (mTrackedNotificationKey != null && mTrackedNotificationKey.equals(sbn.getKey())) {
                 // The notification we track has no progress anymore
                 Log.d(TAG, "Tracked notification has lost progress");
                 synchronized (this) {
