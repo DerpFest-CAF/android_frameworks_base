@@ -193,23 +193,27 @@ public class OnGoingActionProgressController implements NotificationListener.Not
         Notification notification = sbn.getNotification();
         mCurrentProgressMax = notification.extras.getInt(Notification.EXTRA_PROGRESS_MAX, 100);
         mCurrentProgress = notification.extras.getInt(Notification.EXTRA_PROGRESS, 0);
-        IconFetcher.AdaptiveDrawableResult drawable = mIsMonochrome ?
-                mIconFetcher.getMonotonicPackageIcon(sbn.getPackageName()) :
-                mIconFetcher.getColoredPackageIcon(sbn.getPackageName());
-        mCurrentDrawable = drawable.drawable;
-        updateIconImageView(drawable);
+        
+        // Get the icon based on monochrome setting
+        Drawable icon = mIconFetcher.getPackageIcon(sbn.getPackageName());
+        mCurrentDrawable = icon;
+        updateIconImageView();
         updateViews();
     }
 
     /** Updates icon based on result from IconFetcher @AsyncUnsafe */
-    private void updateIconImageView(IconFetcher.AdaptiveDrawableResult drawable) {
+    private void updateIconImageView() {
         if (mIsMonochrome) {
-            mIconView.setImageTintList(ColorStateList.valueOf(
-                    getThemeColor(mContext, android.R.attr.colorForeground)));
+            // When monochrome is enabled, tint with system foreground color
+            TypedValue typedValue = new TypedValue();
+            mContext.getTheme().resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
+            int tintColor = typedValue.data;
+            mIconView.setImageTintList(ColorStateList.valueOf(tintColor));
         } else {
+            // When monochrome is disabled, clear any tint
             mIconView.setImageTintList(null);
         }
-        mIconView.setImageDrawable(drawable.drawable);
+        mIconView.setImageDrawable(mCurrentDrawable);
     }
 
     /** Updates progress if needed @AsyncUnsafe */
@@ -307,6 +311,9 @@ public class OnGoingActionProgressController implements NotificationListener.Not
             ONGOING_ACTION_CHIP_ENABLED, 1, UserHandle.USER_CURRENT) == 1;
         mIsMonochrome = Settings.System.getIntForUser(mContentResolver,
             ONGOING_ACTION_CHIP_MONOCHROME, 0, UserHandle.USER_CURRENT) == 1;
+        if (mIsTrackingProgress) {
+            updateIconImageView();
+        }
         updateViews();
     }
 
