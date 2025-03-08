@@ -50,10 +50,10 @@ import com.android.systemui.res.R;
 
 public class SliderQSTileViewImpl extends QSTileViewImpl {
 
+    private SlideableQSTile mSlideableQSTile;
     private PercentageDrawable percentageDrawable;
     private String mSettingsKey;
     private SettingObserver mSettingObserver;
-    private boolean enabled = false;
     private float mCurrentPercent;
     private int mWarnColor;
 
@@ -63,41 +63,38 @@ public class SliderQSTileViewImpl extends QSTileViewImpl {
     public SliderQSTileViewImpl(
             Context context,
             boolean collapsed,
-            View.OnTouchListener touchListener,
-            String settingKey,
-            float settingsDefaultValue) {
+            SlideableQSTile slideableQSTile) {
         super(context, collapsed);
         ACTIVE_STATE_PERCENTAGE_ALPHA = context.getResources().getInteger(R.integer.tile_active_state_percentage_alpha);
         INACTIVE_STATE_PERCENTAGE_ALPHA = context.getResources().getInteger(R.integer.tile_inactive_state_percentage_alpha);
-        if (touchListener != null && !settingKey.isEmpty()) {
-            mSettingsKey = settingKey;
-            mWarnColor = Utils.getColorErrorDefaultColor(context);
-            percentageDrawable = new PercentageDrawable(settingsDefaultValue);
-            percentageDrawable.setTint(context.getResources().getColor(R.color.tile_percentage_color));
-            updatePercentBackground(STATE_INACTIVE); // default
-            mSettingObserver = new SettingObserver(new Handler(Looper.getMainLooper()));
-            setOnTouchListener(touchListener);
-            mContext.getContentResolver()
-                    .registerContentObserver(
-                            Settings.System.getUriFor(settingKey),
-                            false,
-                            mSettingObserver,
-                            UserHandle.USER_CURRENT);
-            enabled = true;
-        }
+        mSlideableQSTile = slideableQSTile;
+        mSettingsKey = slideableQSTile.getSettingsSystemKey();
+        mWarnColor = Utils.getColorErrorDefaultColor(context);
+        percentageDrawable = new PercentageDrawable();
+        percentageDrawable.setTint(Color.WHITE);
+        updatePercentBackground(STATE_INACTIVE); // default
+        mSettingObserver = new SettingObserver(new Handler(Looper.getMainLooper()));
+        setOnTouchListener(slideableQSTile.getTouchListener());
+        mContext.getContentResolver()
+                .registerContentObserver(
+                        Settings.System.getUriFor(mSettingsKey),
+                        false,
+                        mSettingObserver,
+                        UserHandle.USER_CURRENT);
     }
 
     @Override
     public void handleStateChanged(QSTile.State state) {
         super.handleStateChanged(state);
-        if (enabled) {
+        if (mSlideableQSTile != null && mSlideableQSTile.isSlideable()) {
             updatePercentBackground(state.state);
         }
     }
 
     @Override
     public int getBackgroundColorForState(int state, boolean disabledByPolicy) {
-        if (state == STATE_ACTIVE && mCurrentPercent >= 0.90f) {
+        if (mSlideableQSTile != null && mSlideableQSTile.isSlideable()
+                && state == STATE_ACTIVE && mCurrentPercent >= 0.90f) {
             return mWarnColor;
         } else {
             return super.getBackgroundColorForState(state, disabledByPolicy);
@@ -131,17 +128,16 @@ public class SliderQSTileViewImpl extends QSTileViewImpl {
 
     private class PercentageDrawable extends Drawable {
         private Drawable shape;
-        private float mDefaultPercent;
 
-        private PercentageDrawable(float defaultPercent) {
+        private PercentageDrawable() {
             shape = mContext.getDrawable(R.drawable.qs_tile_background_shape);
-            mDefaultPercent = defaultPercent;
             updatePercent();
         }
 
         synchronized void updatePercent() {
             mCurrentPercent = Settings.System.getFloatForUser(mContext.getContentResolver(),
-                    mSettingsKey, mDefaultPercent, UserHandle.USER_CURRENT);
+                    mSettingsKey, mSlideableQSTile.getSettingsDefaultValue(),
+                    UserHandle.USER_CURRENT);
         }
 
         @Override

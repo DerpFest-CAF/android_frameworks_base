@@ -45,6 +45,7 @@ public class ClockController {
 
     private int mClockPosition;
     private boolean mDenyListed;
+    private boolean showClockBg;
 
     public ClockController(Context context, View statusBar) {
         mContext = context;
@@ -53,11 +54,14 @@ public class ClockController {
         mLeftClock = statusBar.findViewById(R.id.clock);
         mRightClock = statusBar.findViewById(R.id.clock_right);
 
-        mActiveClock = mLeftClock;
+        mClockPosition = Settings.System.getInt(mContext.getContentResolver(),
+                DerpFestSettings.System.STATUS_BAR_CLOCK, CLOCK_POSITION_LEFT);
+        mActiveClock = getClock();
 
         Uri iconHideList = Settings.Secure.getUriFor(StatusBarIconController.ICON_HIDE_LIST);
         Uri statusBarClock = Settings.System.getUriFor(
                 DerpFestSettings.System.STATUS_BAR_CLOCK);
+        Uri clockBgChip = Settings.System.getUriFor(DerpFestSettings.System.STATUSBAR_CLOCK_CHIP);
         ContentObserver contentObserver = new ContentObserver(null) {
             @Override
             public void onChange(boolean selfChange, @Nullable Uri uri) {
@@ -68,6 +72,9 @@ public class ClockController {
                 } else if (statusBarClock.equals(uri)) {
                     mClockPosition = Settings.System.getInt(mContext.getContentResolver(),
                             DerpFestSettings.System.STATUS_BAR_CLOCK, CLOCK_POSITION_LEFT);
+                } else if (clockBgChip.equals(uri)) {
+                    showClockBg = Settings.System.getInt(mContext.getContentResolver(),
+                            DerpFestSettings.System.STATUSBAR_CLOCK_CHIP, 0) == 1;
                 }
                 updateActiveClock();
             }
@@ -75,8 +82,10 @@ public class ClockController {
         mContext.getContentResolver().registerContentObserver(iconHideList, false, contentObserver);
         mContext.getContentResolver().registerContentObserver(statusBarClock, false,
                 contentObserver);
+        mContext.getContentResolver().registerContentObserver(clockBgChip, false, contentObserver);
         contentObserver.onChange(true, iconHideList);
         contentObserver.onChange(true, statusBarClock);
+        contentObserver.onChange(true, clockBgChip);
     }
 
     public Clock getClock() {
@@ -101,6 +110,9 @@ public class ClockController {
 
             // Override any previous setting
             mActiveClock.setClockVisibleByUser(!mDenyListed);
+
+            // Add background chip
+            addBackgroundChip(mActiveClock);
         });
     }
 
@@ -114,5 +126,31 @@ public class ClockController {
 
     public void onDensityOrFontScaleChanged() {
         mActiveClock.onDensityOrFontScaleChanged();
+    }
+
+    private void addBackgroundChip(View vClock) {
+        if (showClockBg) {
+            vClock.setBackgroundResource(R.drawable.sb_date_bg);
+            vClock.setPadding(10,2,10,2);
+        } else {
+            int clockPaddingStart = mContext.getResources().getDimensionPixelSize(
+                    R.dimen.status_bar_clock_starting_padding);
+            int clockPaddingEnd = mContext.getResources().getDimensionPixelSize(
+                    R.dimen.status_bar_clock_end_padding);
+            int leftClockPaddingStart = mContext.getResources().getDimensionPixelSize(
+                    R.dimen.status_bar_left_clock_starting_padding);
+            int leftClockPaddingEnd = mContext.getResources().getDimensionPixelSize(
+                    R.dimen.status_bar_left_clock_end_padding);
+            if (vClock.getId() == R.id.clock) {
+                vClock.setBackgroundResource(0);
+                vClock.setPaddingRelative(leftClockPaddingStart, 0, leftClockPaddingEnd, 0);
+            } else if (vClock.getId() == R.id.clock_center) {
+                vClock.setBackgroundResource(0);
+                vClock.setPaddingRelative(0,0,0,0);
+            } else if (vClock.getId() == R.id.clock_right) {
+                vClock.setBackgroundResource(0);
+                vClock.setPaddingRelative(clockPaddingStart, 0, clockPaddingEnd, 0);
+            }
+        }
     }
 }

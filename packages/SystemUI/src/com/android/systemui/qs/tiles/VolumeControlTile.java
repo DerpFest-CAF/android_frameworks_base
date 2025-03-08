@@ -45,7 +45,7 @@ import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.QsEventLogger;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
-import com.android.systemui.qs.tileimpl.TouchableQSTile;
+import com.android.systemui.qs.tileimpl.SlideableQSTile;
 import com.android.systemui.res.R;
 import com.android.systemui.statusbar.policy.ConfigurationController;
 
@@ -55,7 +55,7 @@ import javax.inject.Inject;
  * A QSTile that allows the user to control the volume level.
  */
 public class VolumeControlTile extends QSTileImpl<BooleanState> 
-        implements TouchableQSTile, ConfigurationController.ConfigurationListener {
+        implements SlideableQSTile, ConfigurationController.ConfigurationListener {
 
     public static final String TILE_SPEC = "volume_control";
 
@@ -68,7 +68,7 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
     private final AudioManager mAudioManager;
     private float mCurrentVolumePercent;
     private int mCurrentVolumeLevel;
-    
+
     private boolean mListening = false;
 
     private final View.OnTouchListener mTouchListener =
@@ -204,12 +204,12 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
     public int getMetricsCategory() {
         return MetricsEvent.VIEW_UNKNOWN;
     }
-    
+
     @Override
     public void onUiModeChanged() {
         updateVolumeFromSystem();
     }
-    
+
     private void updateVolumeFromSystem() {
         mCurrentVolumeLevel = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         mCurrentVolumePercent = (float) mCurrentVolumeLevel / mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -218,6 +218,11 @@ public class VolumeControlTile extends QSTileImpl<BooleanState>
                 VOLUME_LEVEL_SETTING,
                 mCurrentVolumePercent);
         refreshState(true);
+    }
+
+    @Override
+    public boolean isSlideable() {
+        return true;
     }
 
     @Override
