@@ -45,7 +45,7 @@ public class ClockController {
 
     private int mClockPosition;
     private boolean mDenyListed;
-    private boolean showClockBg;
+    private int mClockChipStyle;
 
     public ClockController(Context context, View statusBar) {
         mContext = context;
@@ -73,8 +73,8 @@ public class ClockController {
                     mClockPosition = Settings.System.getInt(mContext.getContentResolver(),
                             DerpFestSettings.System.STATUS_BAR_CLOCK, CLOCK_POSITION_LEFT);
                 } else if (clockBgChip.equals(uri)) {
-                    showClockBg = Settings.System.getInt(mContext.getContentResolver(),
-                            DerpFestSettings.System.STATUSBAR_CLOCK_CHIP, 0) == 1;
+                    mClockChipStyle = Settings.System.getInt(mContext.getContentResolver(),
+                            DerpFestSettings.System.STATUSBAR_CLOCK_CHIP, 0);
                 }
                 updateActiveClock();
             }
@@ -129,9 +129,14 @@ public class ClockController {
     }
 
     private void addBackgroundChip(View vClock) {
-        if (showClockBg) {
-            vClock.setBackgroundResource(R.drawable.sb_date_bg);
-            vClock.setPadding(10,2,10,2);
+        if (mClockChipStyle > 0) {
+            String chipStyleUri = "sb_date_bg" + String.valueOf(mClockChipStyle);
+            int resId = mContext.getResources().getIdentifier(chipStyleUri, "drawable", "com.android.systemui");
+            vClock.setBackgroundResource(resId);
+            int paddingHorizontal = mContext.getResources().getDimensionPixelSize(R.dimen.sb_chip_padding_horizontal);
+            int paddingVertical = mContext.getResources().getDimensionPixelSize(R.dimen.sb_chip_padding_vertical);
+            vClock.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical);
+            vClock.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         } else {
             int clockPaddingStart = mContext.getResources().getDimensionPixelSize(
                     R.dimen.status_bar_clock_starting_padding);
@@ -151,6 +156,7 @@ public class ClockController {
                 vClock.setBackgroundResource(0);
                 vClock.setPaddingRelative(clockPaddingStart, 0, clockPaddingEnd, 0);
             }
+            vClock.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         }
     }
 }
