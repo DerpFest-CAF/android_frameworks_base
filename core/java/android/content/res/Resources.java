@@ -215,7 +215,7 @@ public class Resources {
                 com.android.internal.R.style.Theme,
                 com.android.internal.R.style.Theme_Holo,
                 com.android.internal.R.style.Theme_DeviceDefault,
-                com.android.internal.R.style.Theme_DeviceDefault_System);
+                com.android.internal.R.style.Theme_DeviceDefault_Light_DarkActionBar);
     }
 
     /** @hide */

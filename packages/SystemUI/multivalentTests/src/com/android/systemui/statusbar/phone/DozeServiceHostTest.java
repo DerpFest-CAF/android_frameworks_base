@@ -44,7 +44,7 @@ import com.android.systemui.doze.DozeLog;
 import com.android.systemui.flags.DisableSceneContainer;
 import com.android.systemui.keyguard.WakefulnessLifecycle;
 import com.android.systemui.keyguard.domain.interactor.DozeInteractor;
-import com.android.systemui.derpfest.pulselight.PulseLightNotifManager;
+import com.android.systemui.libremobileos.pulselight.PulseLightNotifManager;
 import com.android.systemui.shade.NotificationShadeWindowViewController;
 import com.android.systemui.shade.domain.interactor.ShadeLockscreenInteractor;
 import com.android.systemui.statusbar.NotificationShadeWindowController;

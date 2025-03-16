@@ -140,6 +140,7 @@ import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
 import android.os.ParcelableException;
 import android.os.PersistableBundle;
+import android.os.PowerManagerInternal;
 import android.os.Process;
 import android.os.ReconcileSdkDataArgs;
 import android.os.RemoteException;
@@ -209,12 +210,13 @@ import com.android.server.ServiceThread;
 import com.android.server.SystemConfig;
 import com.android.server.ThreadPriorityBooster;
 import com.android.server.Watchdog;
+import com.android.server.am.ActivityManagerService.LocalService;
 import com.android.server.apphibernation.AppHibernationManagerInternal;
 import com.android.server.art.DexUseManagerLocal;
 import com.android.server.art.model.DeleteResult;
 import com.android.server.compat.CompatChange;
 import com.android.server.compat.PlatformCompat;
-import com.android.server.derpfest.ParallelSpaceManagerServiceInternal;
+import com.android.server.libremobileos.ParallelSpaceManagerServiceInternal;
 import com.android.server.pm.Installer.InstallerException;
 import com.android.server.pm.Settings.VersionInfo;
 import com.android.server.pm.dex.ArtManagerService;
@@ -254,6 +256,8 @@ import com.android.server.utils.WatchedArrayMap;
 import com.android.server.utils.WatchedSparseBooleanArray;
 import com.android.server.utils.WatchedSparseIntArray;
 import com.android.server.utils.Watcher;
+
+import com.nvidia.NvAppProfileService;
 
 import dalvik.system.VMRuntime;
 
@@ -811,6 +815,8 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
 
     final PackageInstallerService mInstallerService;
 
+    private NvAppProfileService mAppProfileService;
+
     final ArtManagerService mArtManagerService;
 
     // TODO(b/260124949): Remove these.
@@ -1006,7 +1012,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
     private final DistractingPackageHelper mDistractingPackageHelper;
     private final StorageEventHelper mStorageEventHelper;
     private final FreeStorageHelper mFreeStorageHelper;
-
+    final PowerManagerInternal mPowerManagerInternal;
 
     private static final boolean ENABLE_BOOST = false;
 
@@ -1033,6 +1039,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
             sThreadPriorityBooster.reset();
         }
     }
+
 
     /**
      * Invalidate the package info cache, which includes updating the cached computer.
@@ -1962,6 +1969,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
         mStorageEventHelper = testParams.storageEventHelper;
         mPackageMonitorCallbackHelper = testParams.packageMonitorCallbackHelper;
 
+        mPowerManagerInternal = null;
         registerObservers(false);
         invalidatePackageInfoCache();
     }
@@ -2137,6 +2145,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
                 mSuspendPackageHelper);
         mStorageEventHelper = new StorageEventHelper(this, mDeletePackageHelper,
                 mRemovePackageHelper);
+        mPowerManagerInternal = LocalServices.getService(PowerManagerInternal.class);
 
         synchronized (mLock) {
             // Create the computer as soon as the state objects have been installed.  The

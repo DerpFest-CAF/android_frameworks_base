@@ -66,7 +66,7 @@ import com.android.internal.app.SuspendedAppActivity;
 import com.android.internal.app.UnlaunchableAppActivity;
 import com.android.server.LocalServices;
 import com.android.server.am.ActivityManagerService;
-import com.android.server.derpfest.AppLockManagerServiceInternal;
+import com.android.server.libremobileos.AppLockManagerServiceInternal;
 import com.android.server.wm.ActivityInterceptorCallback.ActivityInterceptResult;
 
 /**

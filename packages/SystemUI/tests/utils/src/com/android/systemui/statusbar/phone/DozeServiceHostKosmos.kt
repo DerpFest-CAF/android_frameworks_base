@@ -25,7 +25,7 @@ import com.android.systemui.doze.dozeLog
 import com.android.systemui.keyguard.domain.interactor.dozeInteractor
 import com.android.systemui.keyguard.wakefulnessLifecycle
 import com.android.systemui.kosmos.Kosmos
-import com.android.systemui.derpfest.pulselight.pulseLightNotifManager
+import com.android.systemui.libremobileos.pulselight.pulseLightNotifManager
 import com.android.systemui.plugins.statusbar.statusBarStateController
 import com.android.systemui.shade.domain.interactor.shadeLockscreenInteractor
 import com.android.systemui.statusbar.notificationShadeWindowController

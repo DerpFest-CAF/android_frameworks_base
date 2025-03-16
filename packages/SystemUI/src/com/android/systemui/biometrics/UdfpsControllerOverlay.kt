@@ -125,6 +125,10 @@ constructor(
     private val powerInteractor: PowerInteractor,
     @Application private val scope: CoroutineScope,
 ) {
+    var frame: View? = null
+        private set
+    private var isDimmed = false
+    private var hideOnUndim = false
     private val currentStateUpdatedToOffAodOrDozing: Flow<Unit> =
         transitionInteractor.currentKeyguardState
             .filter {
@@ -157,16 +161,6 @@ constructor(
 
     private var overlayTouchListener: TouchExplorationStateChangeListener? = null
 
-    private val useFrameworkDimming = context.resources.getBoolean(
-        com.android.systemui.res.R.bool.config_udfpsFrameworkDimming
-    )
-
-    private val udfpsHelper: UdfpsHelper? = if (useFrameworkDimming) {
-        UdfpsHelper(context, windowManager, shadeInteractor, requestReason)
-    } else {
-        null
-    }
-
     private val coreLayoutParams =
         WindowManager.LayoutParams(
                 WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL,
@@ -189,6 +183,30 @@ constructor(
                 accessibilityTitle = " "
                 inputFeatures = WindowManager.LayoutParams.INPUT_FEATURE_SPY
             }
+
+    var dimAmount: Float = 0f
+        set(value) {
+            frame?.setBackgroundColor((value * 255).toInt() shl 24)
+            isDimmed = value > 0
+            if (hideOnUndim) {
+                hideFrame()
+            }
+        }
+
+    private val frameLayoutParams = WindowManager.LayoutParams(
+        WindowManager.LayoutParams.TYPE_NAVIGATION_BAR_PANEL,
+        Utils.FINGERPRINT_OVERLAY_LAYOUT_PARAM_FLAGS
+            or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            or WindowManager.LayoutParams.FLAG_FULLSCREEN,
+        PixelFormat.TRANSLUCENT
+    ).apply {
+        fitInsetsTypes = 0
+        gravity = android.view.Gravity.TOP or android.view.Gravity.LEFT
+        layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+        privateFlags = WindowManager.LayoutParams.PRIVATE_FLAG_TRUSTED_OVERLAY
+        // Avoid announcing window title.
+        accessibilityTitle = " "
+    }
 
     /** If the overlay is currently showing. */
     val isShowing: Boolean
@@ -223,6 +241,8 @@ constructor(
             sensorBounds = Rect(params.sensorBounds)
             try {
                 if (DeviceEntryUdfpsRefactor.isEnabled) {
+                    frame = View(context)
+                    dimAmount = 0f
                     overlayTouchView =
                         (inflater.inflate(R.layout.udfps_touch_overlay, null, false)
                                 as UdfpsTouchOverlay)
@@ -234,6 +254,7 @@ constructor(
                                     importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                                 }
 
+                                frame?.let { windowManager.addView(it, frameLayoutParams) }
                                 addViewNowOrLater(this, null)
                                 when (requestReason) {
                                     REASON_AUTH_KEYGUARD ->
@@ -255,6 +276,8 @@ constructor(
                                 }
                             }
                 } else {
+                    frame = View(context)
+                    dimAmount = 0f
                     overlayViewLegacy =
                         (inflater.inflate(R.layout.udfps_view, null, false) as UdfpsView).apply {
                             overlayParams = params
@@ -270,6 +293,7 @@ constructor(
                                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                             }
 
+                            frame?.let { windowManager.addView(it, frameLayoutParams) }
                             addViewNowOrLater(this, animation)
                             sensorRect = sensorBounds
                         }
@@ -303,7 +327,6 @@ constructor(
     }
 
     private fun addViewNowOrLater(view: View, animation: UdfpsAnimationViewController<*>?) {
-        udfpsHelper?.addDimLayer()
         addViewRunnable =
             kotlinx.coroutines.Runnable {
                 Trace.setCounter("UdfpsAddView", 1)
@@ -331,6 +354,7 @@ constructor(
         DeviceEntryUdfpsRefactor.isUnexpectedlyInLegacyMode()
         overlayParams = updatedOverlayParams
         sensorBounds = updatedOverlayParams.sensorBounds
+        overlayTouchView?.sensorRect = updatedOverlayParams.sensorBounds
         getTouchOverlay()?.let {
             if (addViewRunnable == null) {
                 // Only updateViewLayout if there's no pending view to add to WM.
@@ -434,6 +458,7 @@ constructor(
     /** Hide the overlay or return false and do nothing if it is already hidden. */
     fun hide(): Boolean {
         val wasShowing = isShowing
+        hideOnUndim = isDimmed
 
         overlayViewLegacy?.apply {
             if (isDisplayConfigured) {
@@ -449,7 +474,6 @@ constructor(
         if (DeviceEntryUdfpsRefactor.isEnabled) {
             udfpsDisplayModeProvider.disable(null)
         }
-        udfpsHelper?.removeDimLayer()
         getTouchOverlay()?.apply {
             if (this.parent != null) {
                 windowManager.removeView(this)
@@ -467,7 +491,15 @@ constructor(
         overlayTouchListener = null
         listenForCurrentKeyguardState?.cancel()
 
+        if (!hideOnUndim) hideFrame()
         return wasShowing
+    }
+
+    private fun hideFrame() {
+        frame?.apply {
+            windowManager.removeView(this)
+        }
+        frame = null
     }
 
     /** Cancel this request. */

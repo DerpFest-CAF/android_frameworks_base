@@ -126,5 +126,5 @@
 # suppress build-time warnings.
 -dontwarn org.jacoco.agent.rt.*
 
-# Keep DerpFest framework sources
--keep,allowoptimization,allowaccessmodification class org.derpfest.** { *; }
+# Keep derpfest framework sources
+-keep,allowoptimization,allowaccessmodification class com.libremobileos.** { *; }

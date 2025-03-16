@@ -17,7 +17,7 @@ package com.android.systemui.statusbar.notification.collection.coordinator
 
 import android.app.Notification
 
-import com.android.systemui.derpfest.pulselight.PulseLightNotifManager
+import com.android.systemui.libremobileos.pulselight.PulseLightNotifManager
 import com.android.systemui.statusbar.notification.collection.NotifPipeline
 import com.android.systemui.statusbar.notification.collection.NotificationEntry
 import com.android.systemui.statusbar.notification.collection.coordinator.dagger.CoordinatorScope

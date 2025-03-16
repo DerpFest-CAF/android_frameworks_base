@@ -110,7 +110,7 @@ import static com.android.server.wm.WindowManagerPolicyProto.ROTATION_MODE;
 import static com.android.server.wm.WindowManagerPolicyProto.SCREEN_ON_FULLY;
 import static com.android.server.wm.WindowManagerPolicyProto.WINDOW_MANAGER_DRAW_COMPLETE;
 
-import static org.derpfest.util.DeviceKeysConstants.*;
+import static com.libremobileos.util.DeviceKeysConstants.*;
 
 import android.accessibilityservice.AccessibilityService;
 import android.annotation.NonNull;
@@ -264,10 +264,10 @@ import com.android.server.wm.DisplayRotation;
 import com.android.server.wm.WindowManagerInternal;
 import com.android.server.wm.WindowManagerInternal.AppTransitionListener;
 
-import org.derpfest.hardware.LineageHardwareManager;
+import com.libremobileos.hardware.LineageHardwareManager;
 import org.derpfest.providers.DerpFestSettings;
-import org.derpfest.util.ActionUtils;
-import org.derpfest.util.VolumeKeyHandler;
+import com.libremobileos.util.ActionUtils;
+import com.libremobileos.util.VolumeKeyHandler;
 
 import dalvik.system.PathClassLoader;
 
@@ -277,8 +277,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -665,6 +666,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     // Click volume down + power for partial screenshot
     boolean mClickPartialScreenshot;
 
+    // Volume Up and Down to mute on Android TV
+    boolean mVolUpAndDownMute;
+
     private boolean mPendingKeyguardOccluded;
     private boolean mKeyguardOccludedChanged;
 
@@ -795,10 +799,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     // Timeout for showing the keyguard after the screen is on, in case no "ready" is received.
     private int mKeyguardDrawnTimeout = 1000;
 
-    private final List<DeviceKeyHandler> mDeviceKeyHandlers = new ArrayList<>();
-
-    private VolumeKeyHandler mVolumeKeyHandler;
-
     private final boolean mVisibleBackgroundUsersEnabled = isVisibleBackgroundUsersEnabled();
 
     // Key codes that should be ignored for visible background users in MUMD environment.
@@ -817,6 +817,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     KeyEvent.KEYCODE_APP_SWITCH,
                     KeyEvent.KEYCODE_NOTIFICATION
             ));
+
+    private final List<DeviceKeyHandler> mDeviceKeyHandlers = new ArrayList<>();
+
+    private VolumeKeyHandler mVolumeKeyHandler;
 
     private static final int MSG_DISPATCH_MEDIA_KEY_WITH_WAKE_LOCK = 3;
     private static final int MSG_DISPATCH_MEDIA_KEY_REPEAT_WITH_WAKE_LOCK = 4;
@@ -840,7 +844,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private static final int MSG_SWITCH_KEYBOARD_LAYOUT = 25;
     private static final int MSG_SET_DEFERRED_KEY_ACTIONS_EXECUTABLE = 27;
 
-    // DerpFest additions
+    // LMODroid additions
     private static final int MSG_TOGGLE_TORCH = 100;
     private static final int MSG_CAMERA_LONG_PRESS = 101;
 
@@ -854,6 +858,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private LineageHardwareManager mLineageHardware;
 
     private boolean mLongSwipeDown;
+    private CameraAvailbilityListener mCameraAvailabilityListener;
 
     private SwipeToScreenshotListener mSwipeToScreenshot;
 
@@ -1120,7 +1125,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             resolver.registerContentObserver(Settings.System.getUriFor(
                     DerpFestSettings.System.THREE_FINGER_GESTURE), false, this,
                     UserHandle.USER_ALL);
-
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    DerpFestSettings.System.VOLUME_UP_AND_DOWN_MUTE), false, this,
+                    UserHandle.USER_ALL);
             updateSettings();
         }
 
@@ -1685,7 +1692,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     KEYCODE_BACK, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
                     KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
 
-            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, "Back - Long Press");
+            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS,
+                    "Back - Long Press");
             performKeyAction(mBackLongPressAction, event);
         }
     }
@@ -2205,7 +2213,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     private void launchCameraAction() {
         sendCloseSystemWindows();
-        Intent intent = new Intent(org.derpfest.content.Intent.ACTION_SCREEN_CAMERA_GESTURE);
+        Intent intent = new Intent(com.libremobileos.content.Intent.ACTION_SCREEN_CAMERA_GESTURE);
         mContext.sendBroadcast(intent, android.Manifest.permission.STATUS_BAR_SERVICE);
     }
 
@@ -2570,12 +2578,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         });
         mWakeGestureListener = new MyWakeGestureListener(mContext, mHandler);
         mSettingsObserver = new SettingsObserver(mHandler);
-        mSettingsObserver.observe();
 
-        // DerpFest additions
+        // LMODroid additions
         mAlarmManager = mContext.getSystemService(AlarmManager.class);
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         mCameraManager.registerTorchCallback(new TorchModeCallback(), mHandler);
+        mCameraAvailabilityListener = new CameraAvailbilityListener();
+        mCameraManager.registerAvailabilityCallback(mCameraAvailabilityListener, mHandler);
 
         mModifierShortcutManager = new ModifierShortcutManager(
                 mContext, mHandler, UserHandle.of(mCurrentUserId));
@@ -2837,22 +2846,39 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             }
         }
 
-        mKeyCombinationManager.addRule(
-                new TwoKeysCombinationRule(KEYCODE_VOLUME_DOWN, KEYCODE_VOLUME_UP) {
-                    @Override
-                    boolean preCondition() {
-                        return mAccessibilityShortcutController
-                                .isAccessibilityShortcutAvailable(isKeyguardLocked());
-                    }
-                    @Override
-                    void execute() {
-                        interceptAccessibilityShortcutChord();
-                    }
-                    @Override
-                    void cancel() {
-                        cancelPendingAccessibilityShortcutAction();
-                    }
-                });
+        if (mHasFeatureLeanback) {
+            mKeyCombinationManager.addRule(
+                    new TwoKeysCombinationRule(KEYCODE_VOLUME_DOWN, KEYCODE_VOLUME_UP) {
+                        @Override
+                        boolean preCondition() {
+                            return mVolUpAndDownMute;
+                        }
+                        @Override
+                        void execute() {
+                            triggerVirtualKeypress(KeyEvent.KEYCODE_VOLUME_MUTE);
+                        }
+                        @Override
+                        void cancel() {
+                        }
+                    });
+        } else {
+            mKeyCombinationManager.addRule(
+                    new TwoKeysCombinationRule(KEYCODE_VOLUME_DOWN, KEYCODE_VOLUME_UP) {
+                        @Override
+                        boolean preCondition() {
+                            return mAccessibilityShortcutController
+                                    .isAccessibilityShortcutAvailable(isKeyguardLocked());
+                        }
+                        @Override
+                        void execute() {
+                            interceptAccessibilityShortcutChord();
+                        }
+                        @Override
+                        void cancel() {
+                            cancelPendingAccessibilityShortcutAction();
+                        }
+                    });
+        }
 
         // Volume up + power can either be the "ringer toggle chord" or as another way to
         // launch GlobalActions. This behavior can change at runtime so we must check behavior
@@ -3421,6 +3447,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                             UserHandle.USER_CURRENT) == 1;
             mCameraLaunch = Settings.System.getIntForUser(resolver,
                     DerpFestSettings.System.CAMERA_LAUNCH, 0,
+                    UserHandle.USER_CURRENT) == 1;
+            mVolUpAndDownMute = Settings.System.getIntForUser(resolver,
+                    DerpFestSettings.System.VOLUME_UP_AND_DOWN_MUTE, 0,
                     UserHandle.USER_CURRENT) == 1;
 
             //Three Finger Gesture
@@ -5684,7 +5713,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK: {
                 boolean isLongSwipe = (event.getFlags() & KeyEvent.FLAG_LONG_SWIPE) != 0;
-                notifyKeyGestureCompletedOnActionUp(event, KeyGestureEvent.KEY_GESTURE_TYPE_BACK);
+                notifyKeyGestureCompletedOnActionUp(event,
+                        KeyGestureEvent.KEY_GESTURE_TYPE_BACK);
 
                 if (mLongSwipeDown && isLongSwipe && !down) {
                     // Trigger long swipe action
@@ -5855,7 +5885,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 } else {
                     mHandler.removeMessages(MSG_CAMERA_LONG_PRESS);
                     // Consume key up events of long presses only.
-                    if (mIsLongPress && mCameraLaunch) {
+                    if (mIsLongPress && mCameraLaunch
+                            && !mCameraAvailabilityListener.isAnyCameraInUse()) {
                         Intent intent;
                         if (keyguardActive) {
                             intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE);
@@ -7380,8 +7411,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private void sendLidChangeBroadcast() {
         final int lidState = mDefaultDisplayPolicy.getLidState();
         Log.d(TAG, "Sending cover change broadcast, lidState=" + lidState);
-        Intent intent = new Intent(org.derpfest.content.Intent.ACTION_LID_STATE_CHANGED);
-        intent.putExtra(org.derpfest.content.Intent.EXTRA_LID_STATE, lidState);
+        Intent intent = new Intent(com.libremobileos.content.Intent.ACTION_LID_STATE_CHANGED);
+        intent.putExtra(com.libremobileos.content.Intent.EXTRA_LID_STATE, lidState);
         intent.setFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
         mContext.sendBroadcastAsUser(intent, UserHandle.SYSTEM);
     }
@@ -8214,5 +8245,30 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     + " for visible background user(u" + assignedUser + ")");
         }
         return false;
+    }
+
+    private class CameraAvailbilityListener extends CameraManager.AvailabilityCallback {
+        private final Set<String> mCameraInUse = Collections.synchronizedSet(new HashSet<>());
+
+        @Override
+        public void onCameraAvailable(String cameraId) {
+            mCameraInUse.remove(cameraId);
+        }
+
+        @Override
+        public void onCameraUnavailable(String cameraId) {
+            try {
+                // check if the camera id is still valid
+                mCameraManager.getCameraCharacteristics(cameraId);
+            } catch (Exception e) {
+                // camera id is no longer valid, ignore
+                return;
+            }
+            mCameraInUse.add(cameraId);
+        }
+
+        public boolean isAnyCameraInUse() {
+            return !mCameraInUse.isEmpty();
+        }
     }
 }

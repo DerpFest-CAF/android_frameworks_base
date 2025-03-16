@@ -350,7 +350,7 @@ import com.android.server.UiThread;
 import com.android.server.Watchdog;
 import com.android.server.input.InputManagerService;
 import com.android.server.inputmethod.InputMethodManagerInternal;
-import com.android.server.derpfest.ParallelSpaceManagerServiceInternal;
+import com.android.server.libremobileos.ParallelSpaceManagerServiceInternal;
 import com.android.server.pm.UserManagerInternal;
 import com.android.server.policy.WindowManagerPolicy;
 import com.android.server.policy.WindowManagerPolicy.ScreenOffListener;
@@ -787,6 +787,9 @@ public class WindowManagerService extends IWindowManager.Stub
     boolean mHardKeyboardAvailable;
     WindowManagerInternal.OnHardKeyboardStatusChangeListener mHardKeyboardStatusChangeListener;
     WindowManagerInternal.OnImeRequestedChangedListener mOnImeRequestedChangedListener;
+
+    private ArraySet<WindowManagerInternal.DisplaySecureContentListener>
+            mDisplaySecureContentListeners = new ArraySet<>();
 
     SettingsObserver mSettingsObserver;
     final EmbeddedWindowController mEmbeddedWindowController;
@@ -5349,6 +5352,15 @@ public class WindowManagerService extends IWindowManager.Stub
         }
     }
 
+    void notifyDisplaySecureContentChange(int displayId, boolean hasSecureWindowOnScreen) {
+        synchronized (mGlobalLock) {
+            mDisplaySecureContentListeners.forEach((listener) -> {
+                listener.onDisplayHasSecureWindowOnScreenChanged(
+                        displayId, hasSecureWindowOnScreen);
+            });
+        }
+    }
+
     // -------------------------------------------------------------
     // Input Events and Focus Management
     // -------------------------------------------------------------
@@ -8761,6 +8773,20 @@ public class WindowManagerService extends IWindowManager.Stub
         public ScreenshotHardwareBuffer takeAssistScreenshot(Set<Integer> windowTypesToExclude) {
             // WMS.takeAssistScreenshot takes care of the locking.
             return WindowManagerService.this.takeAssistScreenshot(windowTypesToExclude);
+        }
+
+        @Override
+        public void registerDisplaySecureContentListener(DisplaySecureContentListener listener) {
+            synchronized (mGlobalLock) {
+                mDisplaySecureContentListeners.add(listener);
+            }
+        }
+
+        @Override
+        public void unregisterDisplaySecureContentListener(DisplaySecureContentListener listener) {
+            synchronized (mGlobalLock) {
+                mDisplaySecureContentListeners.remove(listener);
+            }
         }
     }
 

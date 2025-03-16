@@ -31,7 +31,7 @@ import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.SOM
 import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.STRONG_AUTH_NOT_REQUIRED;
 import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_USER_LOCKDOWN;
 
-import static org.derpfest.util.PowerMenuConstants.*;
+import static com.libremobileos.util.PowerMenuConstants.*;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -166,14 +166,14 @@ import com.android.systemui.util.leak.RotationUtils;
 import com.android.systemui.util.settings.GlobalSettings;
 import com.android.systemui.util.settings.SecureSettings;
 
-import org.derpfest.app.LineageGlobalActions;
+import com.libremobileos.app.LineageGlobalActions;
 import org.derpfest.providers.DerpFestSettings;
-
-import org.derpfest.util.PowerMenuUtils;
+import com.libremobileos.util.PowerMenuUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -200,7 +200,7 @@ public class GlobalActionsDialogLite implements DialogInterface.OnDismissListene
     private static final boolean SHOW_SILENT_TOGGLE = true;
 
     /* Valid settings for restart actions keys.
-     * see frameworks_derpfest config.xml config_restartActionsList */
+     * see platform_frameworks_derpfest config.xml config_restartActionsList */
     private static final String RESTART_ACTION_KEY_RESTART = "restart";
     private static final String RESTART_ACTION_KEY_RESTART_RECOVERY = "restart_recovery";
     private static final String RESTART_ACTION_KEY_RESTART_BOOTLOADER = "restart_bootloader";
@@ -681,9 +681,12 @@ public class GlobalActionsDialogLite implements DialogInterface.OnDismissListene
                 if (mShowSilentToggle) {
                     addIfShouldShowAction(tempActions, mSilentModeAction);
                 }
-            } else if (GLOBAL_ACTION_KEY_USERS.equals(actionKey)) {
-                List<UserInfo> users = mUserManager.getUsers();
-                if (users.size() > 1) {
+            } else if (GLOBAL_ACTION_KEY_USERS.equals(actionKey)
+                    && mUserManager.isUserSwitcherEnabled()) {
+                Stream<UserInfo> users = mUserManager.getUsers()
+                        .stream()
+                        .filter(u -> u.supportsSwitchToByUser());
+                if (users.count() > 1) {
                     addUserActions(mUsersItems, currentUser.get());
                     addIfShouldShowAction(tempActions, new UsersAction());
                 }

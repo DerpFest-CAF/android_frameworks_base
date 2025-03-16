@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2022 StatiXOS
- * Copyright (C) 2024 The LibreMobileOS Foundation
+ * Copyright (C) 2024-2025 The LibreMobileOS Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import android.hardware.camera2.CameraCharacteristics.Key;
 import android.hardware.camera2.CameraManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -43,13 +44,13 @@ import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.QsEventLogger;
 import com.android.systemui.qs.logging.QSLogger;
-import com.android.systemui.qs.tileimpl.TouchableQSTile;
+import com.android.systemui.qs.tileimpl.SlideableQSTile;
 import com.android.systemui.res.R;
 import com.android.systemui.statusbar.policy.FlashlightController;
 
 import javax.inject.Inject;
 
-public class FlashlightStrengthTile extends FlashlightTile implements TouchableQSTile {
+public class FlashlightStrengthTile extends FlashlightTile implements SlideableQSTile {
 
     public static final String TILE_SPEC = "flashlight";
 
@@ -62,14 +63,35 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
 
     private final CameraManager mCameraManager;
     private final FlashlightController mFlashlightController;
+    private final Looper mBgLooper;
     private boolean mSupportsSettingFlashLevel;
-    private int mDefaultLevel;
-    private int mMaxLevel;
+    private boolean mRegistered = false;
+    private int mDefaultLevel = 0;
+    private int mMaxLevel = 1;
     private float mCurrentPercent;
     private int mCurrentLevel;
     private boolean mClicked = true;
 
     @Nullable private String mCameraId;
+
+    private final CameraManager.TorchCallback mTorchCallback = new CameraManager.TorchCallback() {
+        @Override
+        public void onTorchStrengthLevelChanged(@NonNull String cameraId, int newStrengthLevel) {
+            if (!cameraId.equals(mCameraId)) {
+                return;
+            }
+            // We don't wanna refresh state for same values as this callback
+            // will be invoked from this tile as well.
+            if (mCurrentLevel == newStrengthLevel) {
+                return;
+            }
+            // Update current percent/level and refresh the tile.
+            mCurrentLevel = newStrengthLevel;
+            mCurrentPercent = ((float) mCurrentLevel) / ((float) mMaxLevel);
+            writeCurrentSetting();
+            refreshState(true);
+        }
+    };
 
     private final View.OnTouchListener mTouchListener =
             new View.OnTouchListener() {
@@ -95,10 +117,7 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
                                 view.getParent().requestDisallowInterceptTouchEvent(true);
                                 moved = true;
                                 mCurrentPercent = Math.max(0.01f, Math.min(newPct, 1));
-                                Settings.System.putFloat(
-                                        mContext.getContentResolver(),
-                                        FLASHLIGHT_BRIGHTNESS_SETTING,
-                                        mCurrentPercent);
+                                writeCurrentSetting();
                                 handleClick(null);
                             }
                             return true;
@@ -106,10 +125,7 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
                         case MotionEvent.ACTION_UP -> {
                             if (moved) {
                                 moved = false;
-                                Settings.System.putFloat(
-                                        mContext.getContentResolver(),
-                                        FLASHLIGHT_BRIGHTNESS_SETTING,
-                                        mCurrentPercent);
+                                writeCurrentSetting();
                             } else {
                                 mClicked = true;
                                 handleClick(null);
@@ -146,12 +162,25 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
                 flashlightController);
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         mFlashlightController = flashlightController;
+        mBgLooper = backgroundLooper;
+    }
+
+    @Override
+    public void handleSetListening(boolean listening) {
+        if (!listening) {
+            if (mRegistered) {
+                mCameraManager.unregisterTorchCallback(mTorchCallback);
+                mRegistered = false;
+            }
+            return;
+        }
+
         try {
             mCameraId = getCameraId();
             CameraCharacteristics characteristics =
                     mCameraManager.getCameraCharacteristics(mCameraId);
             mSupportsSettingFlashLevel =
-                    flashlightController.isAvailable()
+                    mFlashlightController.isAvailable()
                             && mCameraId != null
                             && characteristics.get(FLASHLIGHT_MAX_BRIGHTNESS_CHARACTERISTIC) > 1;
             mMaxLevel = (int) characteristics.get(FLASHLIGHT_MAX_BRIGHTNESS_CHARACTERISTIC);
@@ -165,40 +194,21 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
         }
         float defaultPercent = ((float) mDefaultLevel) / ((float) mMaxLevel);
         mCurrentPercent =
-                Settings.System.getFloat(
+                Settings.System.getFloatForUser(
                         mContext.getContentResolver(),
                         FLASHLIGHT_BRIGHTNESS_SETTING,
-                        defaultPercent);
+                        defaultPercent,
+                        UserHandle.USER_CURRENT);
         // Register torch callback on torch strength level supported devices.
-        if (mSupportsSettingFlashLevel) {
-            CameraManager.TorchCallback mTorchCallback = new CameraManager.TorchCallback() {
-                @Override
-                public void onTorchStrengthLevelChanged(@NonNull String cameraId, int newStrengthLevel) {
-                    if (!cameraId.equals(mCameraId)) {
-                        return;
-                    }
-                    // We don't wanna refresh state for same values as this callback
-                    // will be invoked from this tile as well.
-                    if (mCurrentLevel == newStrengthLevel) {
-                        return;
-                    }
-                    // Update current percent/level and refresh the tile.
-                    mCurrentLevel = newStrengthLevel;
-                    mCurrentPercent = ((float) mCurrentLevel) / ((float) mMaxLevel);
-                    Settings.System.putFloat(
-                            mContext.getContentResolver(),
-                            FLASHLIGHT_BRIGHTNESS_SETTING,
-                            mCurrentPercent);
-                    refreshState(true);
-                }
-            };
-            mCameraManager.registerTorchCallback(mTorchCallback, new Handler(backgroundLooper));
+        if (mSupportsSettingFlashLevel && !mRegistered) {
+            mCameraManager.registerTorchCallback(mTorchCallback, new Handler(mBgLooper));
+            mRegistered = true;
         }
     }
 
     @Override
     public View.OnTouchListener getTouchListener() {
-        return mSupportsSettingFlashLevel ? mTouchListener : null;
+        return mTouchListener;
     }
 
     @Override
@@ -209,6 +219,11 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
     @Override
     public float getSettingsDefaultValue() {
         return ((float) mDefaultLevel) / ((float) mMaxLevel);
+    }
+
+    @Override
+    public boolean isSlideable() {
+        return mSupportsSettingFlashLevel;
     }
 
     @Override
@@ -267,5 +282,13 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
             }
         }
         return null;
+    }
+
+    private void writeCurrentSetting() {
+        Settings.System.putFloatForUser(
+                mContext.getContentResolver(),
+                FLASHLIGHT_BRIGHTNESS_SETTING,
+                mCurrentPercent,
+                UserHandle.USER_CURRENT);
     }
 }

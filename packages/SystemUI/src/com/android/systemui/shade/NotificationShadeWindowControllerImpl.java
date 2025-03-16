@@ -27,16 +27,13 @@ import android.app.IActivityManager;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
-import android.database.ContentObserver;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Binder;
 import android.os.Build;
-import android.os.Handler;
 import android.os.RemoteException;
 import android.os.Trace;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -83,8 +80,6 @@ import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.user.domain.interactor.SelectedUserInteractor;
 
 import dagger.Lazy;
-
-import org.derpfest.providers.DerpFestSettings;
 
 import java.io.PrintWriter;
 import java.lang.ref.Reference;
@@ -268,17 +263,6 @@ public class NotificationShadeWindowControllerImpl implements NotificationShadeW
         }
     }
 
-    private boolean shouldEnableKeyguardScreenRotation() {
-        boolean enableAccelerometerRotation =
-                Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.ACCELEROMETER_ROTATION, 0) != 0;
-        boolean enableLockScreenRotation =
-                Settings.System.getInt(mContext.getContentResolver(),
-                DerpFestSettings.System.LOCKSCREEN_ROTATION, 0) != 0;
-        return mKeyguardStateController.isKeyguardScreenRotationAllowed()
-                && (enableLockScreenRotation && enableAccelerometerRotation);
-    }
-
     /**
      * Adds the notification shade view to the window manager.
      */
@@ -325,8 +309,6 @@ public class NotificationShadeWindowControllerImpl implements NotificationShadeW
         }
 
         mLpChanged.copyFrom(mLp);
-        SettingsObserver observer = new SettingsObserver(new Handler());
-        observer.observe(mContext);
         onThemeChanged();
 
         // Make the state consistent with KeyguardViewMediator#setupLocked during initialization.
@@ -468,7 +450,7 @@ public class NotificationShadeWindowControllerImpl implements NotificationShadeW
 
     private void adjustScreenOrientation(NotificationShadeWindowState state) {
         if (state.bouncerShowing || state.isKeyguardShowingAndNotOccluded() || state.dozing) {
-            if (shouldEnableKeyguardScreenRotation()) {
+            if (mKeyguardStateController.isKeyguardScreenRotationAllowed()) {
                 mLpChanged.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_USER;
             } else {
                 mLpChanged.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR;
@@ -1098,29 +1080,4 @@ public class NotificationShadeWindowControllerImpl implements NotificationShadeW
             apply(mCurrentState);
         }
     };
-
-    private class SettingsObserver extends ContentObserver {
-        public SettingsObserver(Handler handler) {
-            super(handler);
-        }
-
-        public void observe(Context context) {
-            context.getContentResolver().registerContentObserver(
-                    Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION),
-                    false, this);
-            context.getContentResolver().registerContentObserver(
-                    Settings.System.getUriFor(DerpFestSettings.System.LOCKSCREEN_ROTATION),
-                    false, this);
-        }
-
-        public void unobserve(Context context) {
-            context.getContentResolver().unregisterContentObserver(this);
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            // update the state
-            apply(mCurrentState);
-        }
-    }
 }

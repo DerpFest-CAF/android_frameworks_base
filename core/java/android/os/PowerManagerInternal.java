@@ -246,6 +246,46 @@ public abstract class PowerManagerInternal {
     public static final int BOOST_DISPLAY_UPDATE_IMMINENT = 1;
 
     /**
+     * SetPowerExtMode() is called to enable/disable specific hint mode, which
+     * may result in adjustment of power/performance parameters of the
+     * cpufreq governor and other controls on device side.
+     *
+     * @param string mode_name which is to be enable/disable.
+     * @param enabled true to enable, false to disable the mode.
+     */
+    public abstract void setPowerExtMode(String mode_name, boolean enabled);
+
+    /**
+     * SetPowerExtBoost() indicates the device may need to boost some resources, as
+     * the load is likely to increase before the kernel governors can react.
+     * Depending on the boost, it may be appropriate to raise the frequencies of
+     * CPU, GPU, memory subsystem, or stop CPU from going into deep sleep state.
+     *
+     * @param boost_name, which is the boost name from PowerExtBoosts enum to be set
+     * @param durationMs The expected duration of the user's interaction, if
+     *        known, or 0 if the expected duration is unknown.
+     *        a negative value indicates canceling previous boost.
+     *        A given platform can choose to boost some time based on durationMs,
+     *        and may also pick an appropriate timeout for 0 case.
+     */
+    public abstract void setPowerExtBoost(String boost_name, int durationMs);
+
+    /**
+     * NotifyAppState() is called to notify the power HAL about the state of an
+     * application. This is used to boost based on the application and it's
+     * characteristics. For example, games based on the Unity may need specific
+     * actions to ensure smoother performance.
+     *
+     * @param packActName The package name and activity name of the application,
+     *        separated by a slash. For example,
+     *        "com.glbenchmark.glbenchmark27/net.kishonti.benchui.BenchTestActivity".
+     * @param pid The PID of the application.
+     * @param uid The UID of the application.
+     * @param state The state of the application, active or inactive.
+     */
+    public abstract void notifyAppState(String packActName, int pid, int uid, boolean state);
+
+    /**
      * SetPowerBoost() indicates the device may need to boost some resources, as
      * the load is likely to increase before the kernel governors can react.
      * Depending on the boost, it may be appropriate to raise the frequencies of
@@ -373,4 +413,51 @@ public abstract class PowerManagerInternal {
      * return false if ambient display is not available.
      */
     public abstract boolean isAmbientDisplaySuppressed();
+
+    /**
+     * This parcelable enum contains the platform supported custom boosts along with defined fallback
+     * standard boosts for when the Extension HAL isn't available.
+     */
+    public enum PowerExtBoosts {
+        // Custom boosts list
+        // There already is INTERACTION boost when user touches the screen but if an OEM would like
+        // to add additional actions for FLING only they can use this boost.
+        FLING_BOOST(BOOST_INTERACTION),
+        // Although there is already a LAUNCH mode boost when an app is launched, OEMs may wish to
+        // boost resources for a period after to ensure the app is responsive while it is loading.
+        // This has a duration of 2000ms.
+        // There is no fallback.
+        ACTIVITY_SWITCH,
+        // Like before, this hint allows OEMs to boost resources for when a new package is launched
+        // This is triggered for a duration of 4000ms.
+        // There is no fallback.
+        PACKAGE_SWITCH,
+        // This hint allows OEMs to boost resources for when a new process thread is created,
+        // a package Cold Launch with a duration of 4000ms.
+        // There is no fallback.
+        PROCESS_CREATE,
+        // This hint allows OEMs to boost resources in case of package installation.
+        // There is no fallback.
+        PACKAGE_INSTALL,
+        // This hint allows OEMs to boost resources when app rotation animation occurs.
+        // There is no fallback.
+        APP_ROTATE;
+        // End boosts list
+
+        // Fallback boost for given value
+        private final int mFallback;
+
+        PowerExtBoosts(int fallback) {
+            mFallback = fallback;
+        }
+
+        public int getFallback() {
+            return mFallback;
+        }
+        // End fallback boost
+
+        PowerExtBoosts() {
+            mFallback = -1;
+        }
+    }
 }

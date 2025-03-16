@@ -34,6 +34,9 @@ interface IPowerManager
     @UnsupportedAppUsage
     void releaseWakeLock(IBinder lock, int flags);
     void updateWakeLockUids(IBinder lock, in int[] uids);
+    oneway void setPowerExtMode(String mode_name, boolean enabled);
+    oneway void setPowerExtBoost(String boost_name, int durationMs);
+    oneway void notifyAppState(String packActName, int pid, int uid, boolean active);
     oneway void setPowerBoost(int boost, int durationMs);
     oneway void setPowerMode(int mode, boolean enabled);
 
@@ -170,8 +173,8 @@ interface IPowerManager
     const int GO_TO_SLEEP_REASON_MAX = 10;
     const int GO_TO_SLEEP_FLAG_NO_DOZE = 1 << 0;
 
-    // DerpFest custom API
-    void wakeUpWithProximityCheck(long time, int reason, String details, String opPackageName);
+    // LMODroid custom API
     void rebootCustom(boolean confirm, String reason, boolean wait);
     void setKeyboardVisibility(boolean visible);
+    void wakeUpWithProximityCheck(long time, int reason, String details, String opPackageName);
 }

@@ -83,7 +83,7 @@ import com.android.internal.protolog.ProtoLog;
 import com.android.internal.util.function.pooled.PooledLambda;
 import com.android.server.LocalServices;
 import com.android.server.am.ActivityManagerService;
-import com.android.server.derpfest.ParallelSpaceManagerServiceInternal;
+import com.android.server.libremobileos.ParallelSpaceManagerServiceInternal;
 
 import com.google.android.collect.Sets;
 

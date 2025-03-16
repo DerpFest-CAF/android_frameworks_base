@@ -81,8 +81,8 @@ import com.android.server.EventLogTags;
 import com.android.server.lights.LightsManager;
 import com.android.server.lights.LogicalLight;
 
-import org.derpfest.notification.LedValues;
-import org.derpfest.notification.LineageNotificationLights;
+import com.libremobileos.notification.LedValues;
+import com.libremobileos.notification.LineageNotificationLights;
 
 import java.io.PrintWriter;
 import java.lang.annotation.Retention;

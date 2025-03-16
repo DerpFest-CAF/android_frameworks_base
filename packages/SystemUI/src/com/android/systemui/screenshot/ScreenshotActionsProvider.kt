@@ -26,6 +26,7 @@ import com.android.systemui.res.R
 import com.android.systemui.screenshot.ActionIntentCreator.createDelete
 import com.android.systemui.screenshot.ActionIntentCreator.createEdit
 import com.android.systemui.screenshot.ActionIntentCreator.createShareWithSubject
+import com.android.systemui.screenshot.ActionIntentCreator.createView
 import com.android.systemui.screenshot.ScreenshotEvent.SCREENSHOT_DELETE_TAPPED
 import com.android.systemui.screenshot.ScreenshotEvent.SCREENSHOT_EDIT_TAPPED
 import com.android.systemui.screenshot.ScreenshotEvent.SCREENSHOT_PREVIEW_TAPPED
@@ -86,7 +87,7 @@ constructor(
                 uiEventLogger.log(SCREENSHOT_PREVIEW_TAPPED, 0, request.packageNameString)
                 onDeferrableActionTapped { result ->
                     actionExecutor.startSharedTransition(
-                        createEdit(result.uri, context),
+                        createView(result.uri, context),
                         result.user,
                         true
                     )
@@ -97,7 +98,7 @@ constructor(
         actionsCallback.provideActionButton(
             ActionButtonAppearance(
                 AppCompatResources.getDrawable(context, R.drawable.ic_screenshot_share),
-                context.resources.getString(R.string.screenshot_share_label),
+                null, // context.resources.getString(R.string.screenshot_share_label),
                 context.resources.getString(R.string.screenshot_share_description),
             ),
             showDuringEntrance = true,
@@ -116,7 +117,7 @@ constructor(
         actionsCallback.provideActionButton(
             ActionButtonAppearance(
                 AppCompatResources.getDrawable(context, R.drawable.ic_screenshot_edit),
-                context.resources.getString(R.string.screenshot_edit_label),
+                null, // context.resources.getString(R.string.screenshot_edit_label),
                 context.resources.getString(R.string.screenshot_edit_description),
             ),
             showDuringEntrance = true,
@@ -135,7 +136,7 @@ constructor(
         actionsCallback.provideActionButton(
             ActionButtonAppearance(
                 AppCompatResources.getDrawable(context, R.drawable.ic_screenshot_delete),
-                context.resources.getString(R.string.screenshot_delete_label),
+                null, // context.resources.getString(R.string.screenshot_delete_label),
                 context.resources.getString(R.string.screenshot_delete_description),
             ),
             showDuringEntrance = true,
@@ -156,7 +157,7 @@ constructor(
             actionsCallback.provideActionButton(
                 ActionButtonAppearance(
                     AppCompatResources.getDrawable(context, R.drawable.ic_screenshot_scroll),
-                    context.resources.getString(R.string.screenshot_scroll_label),
+                    null, // context.resources.getString(R.string.screenshot_scroll_label),
                     context.resources.getString(R.string.screenshot_scroll_label),
                 ),
                 showDuringEntrance = true,

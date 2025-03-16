@@ -153,6 +153,8 @@ import com.android.server.net.BaseNetworkObserver;
 import com.android.server.vcn.util.MtuUtils;
 import com.android.server.vcn.util.PersistableBundleUtils;
 
+import org.derpfest.providers.DerpFestSettings;
+
 import libcore.io.IoUtils;
 
 import java.io.FileDescriptor;
@@ -187,8 +189,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import org.derpfest.providers.DerpFestSettings;
 
 /**
  * @hide
@@ -783,7 +783,7 @@ public class Vpn {
     /**
      * Returns whether currently prepared VPN package is set as the global VPN.
      */
-    public synchronized boolean isGlobalVpn() {
+    private synchronized boolean isGlobalVpn() {
         final String globalVpnPkg = Settings.Global.getString(mContext.getContentResolver(),
                 DerpFestSettings.Global.GLOBAL_VPN_APP);
         return mUserId == UserHandle.USER_SYSTEM && mPackage.equals(globalVpnPkg);

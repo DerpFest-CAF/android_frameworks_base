@@ -35,7 +35,7 @@ import com.android.internal.util.Preconditions;
 import com.android.server.LocalServices;
 import com.android.server.pm.UserManagerInternal;
 
-import com.android.server.derpfest.ParallelSpaceManagerServiceInternal;
+import com.android.server.libremobileos.ParallelSpaceManagerServiceInternal;
 
 import java.io.FileDescriptor;
 import java.util.Arrays;

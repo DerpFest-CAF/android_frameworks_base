@@ -33,10 +33,10 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
-import android.text.TextUtils;
+import android.text.BidiFormatter;
 import android.text.format.Formatter;
+import android.text.format.Formatter.BytesResult;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -49,16 +49,19 @@ import com.android.settingslib.net.DataUsageController;
 import com.android.systemui.FontSizeUtils;
 import com.android.systemui.res.R;
 
+import org.derpfest.providers.DerpFestSettings;
+
+import java.util.List;
+
 /**
  * Footer of expanded Quick Settings, tiles page indicator, (optionally) build number and
  * {@link FooterActionsView}
  */
 public class QSFooterView extends FrameLayout {
-    private static final String TAG = "QSFooterView";
-
     private PageIndicator mPageIndicator;
     private TextView mUsageText;
     private View mEditButton;
+    private View mSpace;
 
     @Nullable
     protected TouchAnimator mFooterAnimator;
@@ -67,26 +70,30 @@ public class QSFooterView extends FrameLayout {
     private boolean mExpanded;
     private float mExpansionAmount;
 
-    private boolean mHideDataUsage;
-    private boolean mShouldShowUsageText;
-    private boolean mShouldShowSuffix;
-
     @Nullable
     private OnClickListener mExpandClickListener;
 
-    private DataUsageController mDataController;
-    private SubscriptionManager mSubManager;
+    /*private final ContentObserver mDeveloperSettingsObserver = new ContentObserver(
+            new Handler(mContext.getMainLooper())) {
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+            setBuildText();
+        }
+    };*/
 
-    private boolean mHasNoSims;
-    private boolean mIsWifiConnected;
-    private String mWifiSsid;
-    private int mSubId;
-    private int mCurrentDataSubId;
+    private DataUsageController mDataController;
+    private ConnectivityManager mConnectivityManager;
+    private WifiManager mWifiManager;
+    private SubscriptionManager mSubManager;
+    private boolean mShouldShowDataUsage;
 
     public QSFooterView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mDataController = new DataUsageController(context);
-        mSubManager = context.getSystemService(SubscriptionManager.class);
+        mConnectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        mSubManager = (SubscriptionManager) context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
     }
 
     @Override
@@ -95,131 +102,89 @@ public class QSFooterView extends FrameLayout {
         mPageIndicator = findViewById(R.id.footer_page_indicator);
         mUsageText = findViewById(R.id.build);
         mEditButton = findViewById(android.R.id.edit);
+        mSpace = findViewById(R.id.spacer);
 
         updateResources();
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
-        setClickable(false);
         setUsageText();
+    }
 
-        mUsageText.setOnClickListener(v -> {
-            if (!mShouldShowSuffix) {
-                mShouldShowSuffix = true;
-            } else if (mSubManager.getActiveSubscriptionInfoCount() > 1) {
-                // Get opposite slot 2 ^ 3 = 1, 1 ^ 3 = 2
-                mSubId = mSubId ^ 3;
-            }
-            setUsageText();
-            mUsageText.setSelected(false);
-            postDelayed(() -> mUsageText.setSelected(true), 1000);
-        });
+    private void setBuildText() {
+        /*if (mBuildText == null) return;
+        if (DevelopmentSettingsEnabler.isDevelopmentSettingsEnabled(mContext)) {
+            mBuildText.setText(mContext.getString(
+                    com.android.internal.R.string.bugreport_status,
+                    Build.VERSION.RELEASE_OR_CODENAME,
+                    Build.ID));
+            // Set as selected for marquee before its made visible, then it won't be announced when
+            // it's made visible.
+            mBuildText.setSelected(true);
+            mShouldShowBuildText = true;
+        } else {
+            mBuildText.setText(null);
+            mShouldShowBuildText = false;
+            mBuildText.setSelected(false);
+        }*/
     }
 
     private void setUsageText() {
-        if (mUsageText == null || mHideDataUsage || !mExpanded) return;
+        if (mUsageText == null) return;
         DataUsageController.DataUsageInfo info;
         String suffix;
-        if (mIsWifiConnected) {
-            info = mDataController.getWifiDailyDataUsageInfo(true);
-            if (info == null) {
-                info = mDataController.getWifiDailyDataUsageInfo(false);
-                suffix = mContext.getResources().getString(R.string.usage_wifi_default_suffix);
-            } else {
-                suffix = getWifiSsid();
-            }
-        } else if (!mHasNoSims) {
-            mDataController.setSubscriptionId(mSubId);
+        if (isWifiConnected()) {
+            info = mDataController.getWifiDailyDataUsageInfo();
+            suffix = getWifiSsid();
+        } else {
+            mDataController.setSubscriptionId(
+                    SubscriptionManager.getDefaultDataSubscriptionId());
             info = mDataController.getDailyDataUsageInfo();
             suffix = getSlotCarrierName();
-        } else {
-            mShouldShowUsageText = false;
-            mUsageText.setText(null);
-            updateVisibilities();
-            return;
         }
-        if (info == null) {
-            Log.w(TAG, "setUsageText: DataUsageInfo is NULL.");
-            return;
-        }
-        // Setting text actually triggers a layout pass (because the text view is set to
-        // wrap_content width and TextView always relayouts for this). Avoid needless
-        // relayout if the text didn't actually change.
-        String text = formatDataUsage(info.usageLevel, suffix);
-        if (!TextUtils.equals(text, mUsageText.getText())) {
-            mUsageText.setText(formatDataUsage(info.usageLevel, suffix));
-        }
-        mShouldShowUsageText = true;
-        updateVisibilities();
+        mUsageText.setText(formatDataUsage(info.usageLevel) + " " +
+                mContext.getResources().getString(R.string.usage_data) +
+                " (" + suffix + ")");
     }
 
-    private String formatDataUsage(long byteValue, String suffix) {
-        // Example: 1.23 GB used today
-        StringBuilder usage = new StringBuilder(Formatter.formatFileSize(getContext(),
-                byteValue, Formatter.FLAG_IEC_UNITS))
-                .append(" ")
-                .append(mContext.getString(R.string.usage_data));
-        if (mShouldShowSuffix) {
-            // Example: 1.23 GB used today (airtel)
-            usage.append(" (")
-                 .append(suffix)
-                 .append(")");
+    private CharSequence formatDataUsage(long byteValue) {
+        final BytesResult res = Formatter.formatBytes(mContext.getResources(), byteValue,
+                Formatter.FLAG_IEC_UNITS);
+        return BidiFormatter.getInstance().unicodeWrap(mContext.getString(
+                com.android.internal.R.string.fileSizeSuffix, res.value, res.units));
+    }
+
+    private boolean isWifiConnected() {
+        final Network network = mConnectivityManager.getActiveNetwork();
+        if (network != null) {
+            NetworkCapabilities capabilities = mConnectivityManager.getNetworkCapabilities(network);
+            return capabilities != null &&
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
+        } else {
+            return false;
         }
-        return usage.toString();
     }
 
     private String getSlotCarrierName() {
-        SubscriptionInfo subInfo = mSubManager.getActiveSubscriptionInfo(mSubId);
-        if (subInfo != null) {
-            return subInfo.getDisplayName().toString();
+        CharSequence result = mContext.getResources().getString(R.string.usage_data_default_suffix);
+        int subId = mSubManager.getDefaultDataSubscriptionId();
+        final List<SubscriptionInfo> subInfoList =
+                mSubManager.getActiveSubscriptionInfoList(true);
+        if (subInfoList != null) {
+            for (SubscriptionInfo subInfo : subInfoList) {
+                if (subId == subInfo.getSubscriptionId()) {
+                    result = subInfo.getDisplayName();
+                    break;
+                }
+            }
         }
-        return mContext.getResources().getString(R.string.usage_data_default_suffix);
+        return result.toString();
     }
 
     private String getWifiSsid() {
-        if (mWifiSsid != null) {
-            return mWifiSsid.replace("\"", "");
-        }
-        return mContext.getResources().getString(R.string.usage_wifi_default_suffix);
-    }
-
-    protected void setWifiSsid(String ssid) {
-        if (mWifiSsid != ssid) {
-            mWifiSsid = ssid;
-            setUsageText();
-        }
-    }
-
-    protected void setIsWifiConnected(boolean connected) {
-        if (mIsWifiConnected != connected) {
-            mIsWifiConnected = connected;
-            setUsageText();
-        }
-    }
-
-    protected void setNoSims(boolean hasNoSims) {
-        if (mHasNoSims != hasNoSims) {
-            mHasNoSims = hasNoSims;
-            setUsageText();
-        }
-    }
-
-    protected void setShowSuffix(boolean show) {
-        if (mShouldShowSuffix != show) {
-            mShouldShowSuffix = show;
-            setUsageText();
-        }
-    }
-
-    protected void setCurrentDataSubId(int subId) {
-        if (mCurrentDataSubId != subId) {
-            mSubId = mCurrentDataSubId = subId;
-            setUsageText();
-        }
-    }
-
-    protected void setHideDataUsage(boolean hide) {
-        if (mHideDataUsage != hide) {
-            mHideDataUsage = hide;
-            updateVisibilities();
+        final WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+        if (wifiInfo.getHiddenSSID() || wifiInfo.getSSID() == WifiManager.UNKNOWN_SSID) {
+            return mContext.getResources().getString(R.string.usage_wifi_default_suffix);
+        } else {
+            return wifiInfo.getSSID().replace("\"", "");
         }
     }
 
@@ -253,7 +218,7 @@ public class QSFooterView extends FrameLayout {
     }
 
     private void updateUsageTextResources() {
-        FontSizeUtils.updateFontSizeFromStyle(mUsageText, R.style.TextAppearance_QS_Status_DataUsage);
+        FontSizeUtils.updateFontSizeFromStyle(mUsageText, R.style.TextAppearance_QS_Status_Build);
     }
 
     private void updateFooterAnimator() {
@@ -292,13 +257,16 @@ public class QSFooterView extends FrameLayout {
             mFooterAnimator.setPosition(headerExpansionFraction);
         }
 
-        if (mUsageText == null || mHideDataUsage) return;
-        if (headerExpansionFraction == 1.0f) {
-            postDelayed(() -> mUsageText.setSelected(true), 1000);
-        } else if (headerExpansionFraction == 0.0f) {
+        if (mUsageText == null) return;
+        if (mShouldShowDataUsage && headerExpansionFraction == 1.0f) {
+            mUsageText.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mUsageText.setSelected(true);
+                }
+            }, 1000);
+        } else {
             mUsageText.setSelected(false);
-            mShouldShowSuffix = false;
-            mSubId = mCurrentDataSubId;
         }
     }
 
@@ -312,12 +280,24 @@ public class QSFooterView extends FrameLayout {
     void updateEverything() {
         post(() -> {
             updateVisibilities();
-            setUsageText();
+            setClickable(false);
         });
     }
 
     private void updateVisibilities() {
-        mUsageText.setVisibility(!mHideDataUsage && mExpanded && mShouldShowUsageText
-                ? View.VISIBLE : View.INVISIBLE);
+        mShouldShowDataUsage = Settings.System.getIntForUser(mContext.getContentResolver(),
+                DerpFestSettings.System.QS_FOOTER_DATA_USAGE, 0,
+                UserHandle.USER_CURRENT) == 1;
+
+        mSpace.setVisibility(mShouldShowDataUsage && mExpanded ? View.GONE : View.VISIBLE);
+
+        if (mExpanded && mShouldShowDataUsage) {
+            mUsageText.setVisibility(View.VISIBLE);
+            mSpace.setVisibility(View.GONE);
+            setUsageText();
+        } else {
+            mUsageText.setVisibility(View.GONE);
+            mSpace.setVisibility(View.VISIBLE);
+        }
     }
 }

@@ -535,8 +535,8 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
         mTag = TAG + "[" + mDisplayId + "]";
         mThermalBrightnessThrottlingDataId =
                 logicalDisplay.getDisplayInfoLocked().thermalBrightnessThrottlingDataId;
-        mLights = LocalServices.getService(LightsManager.class);
 
+        mLights = LocalServices.getService(LightsManager.class);
         mUniqueDisplayId = mDisplayDevice.getUniqueId();
         mDisplayStatsId = mUniqueDisplayId.hashCode();
         mPhysicalDisplayName = mDisplayDevice.getNameLocked();

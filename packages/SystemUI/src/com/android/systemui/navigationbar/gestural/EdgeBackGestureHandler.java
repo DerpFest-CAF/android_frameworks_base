@@ -26,7 +26,7 @@ import static com.android.systemui.navigationbar.gestural.Utilities.isTrackpadSc
 import static com.android.systemui.navigationbar.gestural.Utilities.isTrackpadThreeFingerSwipe;
 import static com.android.systemui.shared.system.QuickStepContract.SYSUI_STATE_TOUCHPAD_GESTURES_DISABLED;
 
-import static org.derpfest.util.DeviceKeysConstants.Action;
+import static com.libremobileos.util.DeviceKeysConstants.Action;
 
 import static java.util.stream.Collectors.joining;
 

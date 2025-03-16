@@ -15,7 +15,7 @@
      limitations under the License.
 -->
 
-<com.android.systemui.derpfest.pulselight.PulseLightView
+<com.android.systemui.libremobileos.pulselight.PulseLightView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -41,4 +41,4 @@
         android:contentDescription="@null"
         android:gravity="start"
         android:src="@drawable/aod_notification_light_left" />
-</com.android.systemui.derpfest.pulselight.PulseLightView>
+</com.android.systemui.libremobileos.pulselight.PulseLightView>

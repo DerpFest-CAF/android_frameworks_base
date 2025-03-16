@@ -125,6 +125,7 @@ import com.android.systemui.navigationbar.gestural.EdgeBackGestureHandler;
 import com.android.systemui.navigationbar.gestural.QuickswitchOrientedNavHandle;
 import com.android.systemui.navigationbar.views.buttons.ButtonDispatcher;
 import com.android.systemui.navigationbar.views.buttons.DeadZone;
+import com.android.systemui.navigationbar.views.buttons.DragDropSurfaceCallback;
 import com.android.systemui.navigationbar.views.buttons.KeyButtonView;
 import com.android.systemui.navigationbar.views.buttons.NavBarButtonClickLogger;
 import com.android.systemui.navigationbar.views.buttons.NavbarOrientationTrackingLogger;
@@ -178,7 +179,7 @@ import javax.inject.Inject;
  * Contains logic for a navigation bar view.
  */
 @NavigationBarScope
-public class NavigationBar extends ViewController<NavigationBarView> implements Callbacks {
+public class NavigationBar extends ViewController<NavigationBarView> implements Callbacks, DragDropSurfaceCallback {
 
     public static final String TAG = "NavigationBar";
     private static final boolean DEBUG = false;
@@ -187,6 +188,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
     private static final String EXTRA_APPEARANCE = "appearance";
     private static final String EXTRA_BEHAVIOR = "behavior";
     private static final String EXTRA_TRANSIENT_STATE = "transient_state";
+    private static final String EXTRA_NEEDS_MENU = "needs_menu";
 
     /** Allow some time inbetween the long press for back and recents. */
     private static final int LOCK_TO_APP_GESTURE_TOLERANCE = 200;
@@ -241,6 +243,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
     private int mDisabledFlags1;
     private int mDisabledFlags2;
     private long mLastLockToAppLongPress;
+    private boolean mNeedsMenu = false;
 
     private Locale mLocale;
     private int mLayoutDirection;
@@ -296,6 +299,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
     private final Binder mInsetsSourceOwner = new Binder();
     private final NavBarButtonClickLogger mNavBarButtonClickLogger;
     private final NavbarOrientationTrackingLogger mNavbarOrientationTrackingLogger;
+    private boolean mForceDisableOverview = false;
 
     /**
      * When quickswitching between apps of different orientations, we draw a secondary home handle
@@ -698,6 +702,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
         mView.setBackgroundExecutor(bgExecutor);
         mView.setEdgeBackGestureHandler(mEdgeBackGestureHandler);
         mView.setDisplayTracker(mDisplayTracker);
+        mView.setBoundsChangeListener(this::onBoundsChange);
         mNavBarMode = mNavigationModeController.addListener(mModeChangedListener);
     }
 
@@ -709,6 +714,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
     public void onInit() {
         // TODO: A great deal of this code should probably live in onViewAttached.
         // It should also has corresponding cleanup in onViewDetached.
+        mView.setForceDisableOverviewCallback(this);
         mView.setBarTransitions(mNavigationBarTransitions);
         mView.setTouchHandler(mTouchHandler);
         setNavBarMode(mNavBarMode);
@@ -751,6 +757,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
             mAppearance = mSavedState.getInt(EXTRA_APPEARANCE, 0);
             mBehavior = mSavedState.getInt(EXTRA_BEHAVIOR, 0);
             mTransientShown = mSavedState.getBoolean(EXTRA_TRANSIENT_STATE, false);
+            mNeedsMenu = mSavedState.getBoolean(EXTRA_NEEDS_MENU, false);
         }
 
         // Respect the latest disabled-flags.
@@ -857,6 +864,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
                 ? mMainAutoHideController : mAutoHideControllerFactory.create(mContext);
         setAutoHideController(autoHideController);
         restoreAppearanceAndTransientState();
+        mView.setMenuVisibility(mNeedsMenu);
     }
 
     @Override
@@ -891,6 +899,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
         outState.putInt(EXTRA_APPEARANCE, mAppearance);
         outState.putInt(EXTRA_BEHAVIOR, mBehavior);
         outState.putBoolean(EXTRA_TRANSIENT_STATE, mTransientShown);
+        outState.putBoolean(EXTRA_NEEDS_MENU, mNeedsMenu);
         getBarTransitions().getLightTransitionsController().saveState(outState);
     }
 
@@ -1161,6 +1170,14 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
         mView.getRotationButtonController().setRecentsAnimationRunning(running);
     }
 
+    @Override
+    public void setForceDisableOverview(boolean forceDisableOverview) {
+        if (mForceDisableOverview != forceDisableOverview) {
+            mForceDisableOverview = forceDisableOverview;
+            mView.updateDisabledSystemUiStateFlags(mSysUiFlagsContainer);
+        }
+    }
+
     /** Restores the appearance and the transient saved state to {@link NavigationBar}. */
     public void restoreAppearanceAndTransientState() {
         final int transitionMode = transitionMode(mTransientShown, mAppearance);
@@ -1179,7 +1196,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
     public void onSystemBarAttributesChanged(int displayId, @Appearance int appearance,
             AppearanceRegion[] appearanceRegions, boolean navbarColorManagedByIme,
             @Behavior int behavior, @InsetsType int requestedVisibleTypes, String packageName,
-            LetterboxDetails[] letterboxDetails) {
+            LetterboxDetails[] letterboxDetails, boolean needsMenu) {
         if (displayId != mDisplayId) {
             return;
         }
@@ -1196,6 +1213,10 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
             mBehavior = behavior;
             mView.setBehavior(behavior);
             updateSystemUiStateFlags();
+        }
+        if (mNeedsMenu != needsMenu) {
+            mNeedsMenu = needsMenu;
+            mView.setMenuVisibility(needsMenu);
         }
     }
 
@@ -1570,7 +1591,7 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
                         stopLockTaskMode = true;
                         return true;
                     } else if (v.getId() == R.id.recent_apps) {
-                        // Send long press key event so that button handling can intercept
+                        // Send long press key event so that Lineage button handling can intercept
                         KeyButtonView keyButtonView = (KeyButtonView) v;
                         keyButtonView.sendEvent(KeyEvent.ACTION_DOWN, KeyEvent.FLAG_LONG_PRESS);
                         keyButtonView.sendAccessibilityEvent(
@@ -1639,6 +1660,8 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
                         (mNavigationIconHints & NAVIGATION_HINT_IME_SWITCHER_SHOWN) != 0)
                 .setFlag(SYSUI_STATE_ALLOW_GESTURE_IGNORING_BAR_VISIBILITY,
                         allowSystemGestureIgnoringBarVisibility())
+                .setFlag(SYSUI_STATE_SCREEN_PINNING,
+                        mForceDisableOverview || mScreenPinningActive)
                 .commitUpdate(mDisplayId);
     }
 
@@ -1768,29 +1791,23 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
                     com.android.internal.R.bool.config_navBarCanMove);
         }
         if (!navBarCanMove) {
-            height = userContext.getResources().getDimensionPixelSize(
-                    com.android.internal.R.dimen.navigation_bar_frame_height);
-            insetsHeight = userContext.getResources().getDimensionPixelSize(
-                    com.android.internal.R.dimen.navigation_bar_height);
+            height = mView.getNavBarFrameHeight();
+            insetsHeight = mView.getNavBarHeight();
         } else {
             switch (rotation) {
                 case ROTATION_UNDEFINED:
                 case Surface.ROTATION_0:
                 case Surface.ROTATION_180:
-                    height = userContext.getResources().getDimensionPixelSize(
-                            com.android.internal.R.dimen.navigation_bar_frame_height);
-                    insetsHeight = userContext.getResources().getDimensionPixelSize(
-                            com.android.internal.R.dimen.navigation_bar_height);
+                    height = mView.getNavBarFrameHeight();
+                    insetsHeight = mView.getNavBarHeight();
                     break;
                 case Surface.ROTATION_90:
                     gravity = Gravity.RIGHT;
-                    width = userContext.getResources().getDimensionPixelSize(
-                            com.android.internal.R.dimen.navigation_bar_width);
+                    width = mView.getNavBarWidth();
                     break;
                 case Surface.ROTATION_270:
                     gravity = Gravity.LEFT;
-                    width = userContext.getResources().getDimensionPixelSize(
-                            com.android.internal.R.dimen.navigation_bar_width);
+                    width = mView.getNavBarWidth();
                     break;
             }
         }
@@ -1943,6 +1960,24 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
             updateButtonLocation(
                     region, mView.getFloatingRotationButton().getCurrentView(), inScreenSpace);
         }
+        if (mView.getMenuButton() != null) {
+            updateButtonLocation(region, touchRegionCache, mView.getMenuButton(), inScreenSpace, useNearestRegion);
+        }
+        if (mView.getPowerButton() != null) {
+            updateButtonLocation(region, touchRegionCache, mView.getPowerButton(), inScreenSpace, useNearestRegion);
+        }
+        if (mView.getVolumeMinusButton() != null) {
+            updateButtonLocation(region, touchRegionCache, mView.getVolumeMinusButton(), inScreenSpace, useNearestRegion);
+        }
+        if (mView.getVolumePlusButton() != null) {
+            updateButtonLocation(region, touchRegionCache, mView.getVolumePlusButton(), inScreenSpace, useNearestRegion);
+        }
+        if (mView.getClipboardButton() != null) {
+            updateButtonLocation(region, touchRegionCache, mView.getClipboardButton(), inScreenSpace, useNearestRegion);
+        }
+        if (mView.getCustomButton() != null) {
+            updateButtonLocation(region, touchRegionCache, mView.getCustomButton(), inScreenSpace, useNearestRegion);
+        }
         return region;
     }
 
@@ -2013,6 +2048,16 @@ public class NavigationBar extends ViewController<NavigationBarView> implements 
         } else {
             mRegionSamplingHelper.stop();
         }
+    }
+
+    private void onBoundsChange() {
+        // give wm some time to change fg app
+        mHandler.postDelayed(() -> {
+            if (mView == null || !mView.isAttachedToWindow()) return;
+            mWindowManager.updateViewLayout(mFrame, getBarLayoutParams(mContext.getResources()
+                    .getConfiguration().windowConfiguration.getRotation()));
+            mRegionSamplingHelper.updateSamplingRect();
+        }, 250);
     }
 
     private void setNavBarMode(int mode) {

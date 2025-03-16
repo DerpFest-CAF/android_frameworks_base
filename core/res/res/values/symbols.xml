@@ -4035,6 +4035,8 @@
   <java-symbol type="integer" name="config_storageManagerDaystoRetainDefault" />
   <java-symbol type="string" name="config_headlineFontFamily" />
   <java-symbol type="string" name="config_headlineFontFamilyMedium" />
+  <java-symbol type="string" name="config_bodyFontFamily" />
+  <java-symbol type="string" name="config_bodyFontFamilyMedium" />
 
   <java-symbol type="drawable" name="stat_sys_vitals" />
 
@@ -4319,8 +4321,8 @@
 
   <!-- Display White-Balance -->
   <java-symbol type="integer" name="config_displayWhiteBalanceBrightnessSensorRate" />
-  <java-symbol type="integer" name="config_displayWhiteBalanceBrightnessFilterHorizon" id="0x010e006a" />
-  <java-symbol type="dimen" name="config_displayWhiteBalanceBrightnessFilterIntercept" id="0x010500cd" />
+  <java-symbol type="integer" name="config_displayWhiteBalanceBrightnessFilterHorizon" />
+  <java-symbol type="dimen" name="config_displayWhiteBalanceBrightnessFilterIntercept" />
   <java-symbol type="string" name="config_displayWhiteBalanceColorTemperatureSensorName" />
   <java-symbol type="integer" name="config_displayWhiteBalanceColorTemperatureSensorRate" />
   <java-symbol type="integer" name="config_displayWhiteBalanceColorTemperatureFilterHorizon" />

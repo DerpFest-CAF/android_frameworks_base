@@ -39,7 +39,6 @@ import android.graphics.Insets;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Handler;
-import android.provider.Settings;
 import android.util.IndentingPrintWriter;
 import android.util.Log;
 import android.util.MathUtils;
@@ -109,6 +108,7 @@ import com.android.systemui.statusbar.policy.SplitShadeStateController;
 import com.android.systemui.util.LargeScreenUtils;
 import com.android.systemui.util.kotlin.JavaAdapter;
 
+import android.provider.Settings;
 import org.derpfest.providers.DerpFestSettings;
 
 import dalvik.annotation.optimization.NeverCompile;

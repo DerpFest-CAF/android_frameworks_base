@@ -55,7 +55,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
-import org.derpfest.app.ParallelSpaceManager;
+import com.libremobileos.app.ParallelSpaceManager;
 import com.android.internal.statusbar.NotificationVisibility;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.systemui.Dumpable;
@@ -218,7 +218,7 @@ public class NotificationLockscreenUserManagerImpl implements
                     initValuesForUser(userId);
                 });
             } else if (profileAvailabilityActions(action) || Objects.equals(action, 
-                    org.derpfest.content.Intent.ACTION_PARALLEL_SPACE_CHANGED)) {
+                    com.libremobileos.content.Intent.ACTION_PARALLEL_SPACE_CHANGED)) {
                 updateCurrentProfilesCache();
             } else if (Objects.equals(action, Intent.ACTION_USER_UNLOCKED)) {
                 if (!keyguardPrivateNotifications()) {
@@ -425,7 +425,7 @@ public class NotificationLockscreenUserManagerImpl implements
             filter.addAction(Intent.ACTION_PROFILE_AVAILABLE);
             filter.addAction(Intent.ACTION_PROFILE_UNAVAILABLE);
         }
-        filter.addAction(org.derpfest.content.Intent.ACTION_PARALLEL_SPACE_CHANGED);
+        filter.addAction(com.libremobileos.content.Intent.ACTION_PARALLEL_SPACE_CHANGED);
         mBroadcastDispatcher.registerReceiver(mBaseBroadcastReceiver, filter,
                 null /* executor */, UserHandle.ALL);
 

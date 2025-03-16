@@ -19,8 +19,8 @@ package com.android.systemui.biometrics
 import android.content.Context
 import android.hardware.biometrics.common.AuthenticateReason
 import android.provider.Settings
-import com.android.internal.R
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.android.internal.R
 import org.mockito.Mockito
 
 class FakeFingerprintInteractiveToAuthProvider : FingerprintInteractiveToAuthProvider {

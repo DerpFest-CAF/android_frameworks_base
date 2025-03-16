@@ -20,7 +20,7 @@ import static android.content.pm.UserInfo.FLAG_ADMIN;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.derpfest.util.PowerMenuConstants.*;
+import static com.libremobileos.util.PowerMenuConstants.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;

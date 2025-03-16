@@ -53,6 +53,10 @@
 }
 -maximumremovedandroidloglevel 2
 
+-keep class com.android.systemui.statusbar.phone.ExpandableIndicator {
+    *;
+}
+
 -keep class com.android.systemui.globalactions.MinHeightScrollView {
     *;
 }

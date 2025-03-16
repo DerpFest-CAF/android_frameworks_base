@@ -89,7 +89,7 @@ import com.android.internal.widget.LockSettingsInternal;
 import com.android.internal.widget.LockSettingsStateListener;
 import com.android.server.LocalServices;
 import com.android.server.SystemService;
-import com.android.server.derpfest.AppLockManagerServiceInternal;
+import com.android.server.libremobileos.AppLockManagerServiceInternal;
 import com.android.server.pm.UserManagerInternal;
 import com.android.server.servicewatcher.CurrentUserServiceSupplier;
 import com.android.server.servicewatcher.ServiceWatcher;

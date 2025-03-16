@@ -280,118 +280,116 @@ object BiometricViewSizeBinder {
                 }
 
                 lifecycleScope.launch {
-                        combine(
-                            viewModel.isUdfpsIndicating,
-                            viewModel.position,
-                            viewModel.iconPosition,
-                            viewModel.iconSize,
-                            viewModel.indicatorMessageWidthPx,
-                            ::Quint
-                        )
-                            .collect {
-                                (
-                                    isUdfpsIndicating,
-                                    position,
-                                    iconPosition,
-                                    iconSize,
-                                    indicatorMessageWidthPx
-                                ) ->
-                                if (!isUdfpsIndicating) return@collect
-                                when (position) {
-                                    PromptPosition.Bottom -> {
-                                        val indicatorMarginTop =
-                                            (indicatorView.layoutParams as MarginLayoutParams)
-                                                .topMargin
-                                        val indicatorHeight = indicatorView.measuredHeight +
-                                            indicatorMarginTop
-                                        val bottomInset = Utils.getNavbarInsets(view.context).bottom
-                                        val marginBottom = view.resources.getDimensionPixelSize(
-                                            R.dimen.biometric_indicator_above_margin_bottom
-                                        )
-                                        // move the indicator text above udfps icon if we don't have
-                                        // enough space
-                                        if (indicatorHeight + bottomInset > iconPosition.bottom) {
-                                            mediumConstraintSet.apply {
-                                                clear(
-                                                    R.id.indicator,
-                                                    ConstraintSet.TOP
-                                                )
-                                                setVerticalBias(
-                                                    R.id.indicator,
-                                                    1.0f
-                                                )
-                                                setVerticalBias(
-                                                    R.id.scrollView,
-                                                    0f
-                                                )
-                                                connect(
-                                                    R.id.indicator,
-                                                    ConstraintSet.BOTTOM,
-                                                    R.id.biometric_icon,
-                                                    ConstraintSet.TOP
-                                                )
-                                                setMargin(
-                                                    R.id.indicator,
-                                                    ConstraintSet.BOTTOM,
-                                                    marginBottom
-                                                )
-                                                setMargin(
-                                                    R.id.scrollView,
-                                                    ConstraintSet.BOTTOM,
-                                                    indicatorMarginTop
-                                                )
+                    combine(
+                        viewModel.isUdfpsIndicating,
+                        viewModel.position,
+                        viewModel.iconPosition,
+                        viewModel.iconSize,
+                        viewModel.indicatorMessageWidthPx,
+                        ::Quint
+                    )
+                        .collect {
+                            (
+                                isUdfpsIndicating,
+                                position,
+                                iconPosition,
+                                iconSize,
+                                indicatorMessageWidthPx
+                            ) ->
+                            if (!isUdfpsIndicating) return@collect
+                            when (position) {
+                                PromptPosition.Bottom -> {
+                                    val indicatorMarginTop =
+                                        (indicatorView.layoutParams as MarginLayoutParams).topMargin
+                                    val indicatorHeight = indicatorView.measuredHeight +
+                                        indicatorMarginTop
+                                    val bottomInset = Utils.getNavbarInsets(view.context).bottom
+                                    val marginBottom = view.resources.getDimensionPixelSize(
+                                        R.dimen.biometric_indicator_above_margin_bottom
+                                    )
+                                    // move the indicator text above udfps icon if we don't have
+                                    // enough space
+                                    if (indicatorHeight + bottomInset > iconPosition.bottom) {
+                                        mediumConstraintSet.apply {
+                                            clear(
+                                                R.id.indicator,
+                                                ConstraintSet.TOP
+                                            )
+                                            setVerticalBias(
+                                                R.id.indicator,
+                                                1.0f
+                                            )
+                                            setVerticalBias(
+                                                R.id.scrollView,
+                                                0f
+                                            )
+                                            connect(
+                                                R.id.indicator,
+                                                ConstraintSet.BOTTOM,
+                                                R.id.biometric_icon,
+                                                ConstraintSet.TOP
+                                            )
+                                            setMargin(
+                                                R.id.indicator,
+                                                ConstraintSet.BOTTOM,
+                                                marginBottom
+                                            )
+                                            setMargin(
+                                                R.id.scrollView,
+                                                ConstraintSet.BOTTOM,
+                                                indicatorMarginTop
+                                            )
+                                        }
+                                        indicatorView
+                                            .updateLayoutParams<ConstraintLayout.LayoutParams> {
+                                                topToBottom = ConstraintLayout.LayoutParams.UNSET
+                                                bottomToTop = R.id.biometric_icon
+                                                bottomMargin = marginBottom
                                             }
-                                            indicatorView
-                                                .updateLayoutParams<ConstraintLayout.LayoutParams> {
-                                                    topToBottom =
-                                                        ConstraintLayout.LayoutParams.UNSET
-                                                    bottomToTop = R.id.biometric_icon
-                                                    bottomMargin = marginBottom
-                                                }
-                                            scrollView
-                                                .updateLayoutParams<ConstraintLayout.LayoutParams> {
-                                                    bottomMargin = indicatorMarginTop
-                                                }
-                                        }
+                                        scrollView
+                                            .updateLayoutParams<ConstraintLayout.LayoutParams> {
+                                                bottomMargin = indicatorMarginTop
+                                            }
                                     }
-                                    // prevent the text from going out of screen bounds as it is
-                                    // centered below the udfps icon in landscape positions
-                                    PromptPosition.Right -> {
-                                        val rightInset = Utils.getNavbarInsets(view.context).right
-                                        val rightMargin = iconPosition.right - (
-                                            (indicatorMessageWidthPx - iconSize.first) / 2
-                                        ) - rightInset
-                                        if (rightMargin < 0) {
-                                            indicatorView.setPadding(
-                                                0,
-                                                indicatorView.paddingTop,
-                                                -rightMargin,
-                                                indicatorView.paddingBottom
-                                            )
-                                        }
-                                    }
-                                    PromptPosition.Left -> {
-                                        val leftInset = Utils.getNavbarInsets(view.context).left
-                                        val leftMargin = iconPosition.left - (
-                                            (indicatorMessageWidthPx - iconSize.first) / 2
-                                        ) - leftInset
-                                        if (leftMargin < 0) {
-                                            indicatorView.setPadding(
-                                                -leftMargin,
-                                                indicatorView.paddingTop,
-                                                0,
-                                                indicatorView.paddingBottom
-                                            )
-                                        }
-                                    }
-                                    // ignore top position as we typically don't allow 180 degree
-                                    // rotation on udfps devices
-                                    else -> return@collect
                                 }
+                                // prevent the text from going out of screen bounds as it is
+                                // centered below the udfps icon in landscape positions
+                                PromptPosition.Right -> {
+                                    val rightInset = Utils.getNavbarInsets(view.context).right
+                                    val rightMargin = iconPosition.right - (
+                                        (indicatorMessageWidthPx - iconSize.first) / 2
+                                    ) - rightInset
+                                    if (rightMargin < 0) {
+                                        indicatorView.setPadding(
+                                            0,
+                                            indicatorView.paddingTop,
+                                            -rightMargin,
+                                            indicatorView.paddingBottom
+                                        )
+                                    }
+                                }
+                                PromptPosition.Left -> {
+                                    val leftInset = Utils.getNavbarInsets(view.context).left
+                                    val leftMargin = iconPosition.left - (
+                                        (indicatorMessageWidthPx - iconSize.first) / 2
+                                    ) - leftInset
+                                    if (leftMargin < 0) {
+                                        indicatorView.setPadding(
+                                            -leftMargin,
+                                            indicatorView.paddingTop,
+                                            0,
+                                            indicatorView.paddingBottom
+                                        )
+                                    }
+                                }
+                                // ignore top position as we typically don't allow 180 degree
+                                // rotation on udfps devices
+                                else -> return@collect
                             }
-                    }
+                        }
+                }
 
-                    lifecycleScope.launch {
+                lifecycleScope.launch {
                     viewModel.iconSize.collect { iconSize ->
                         iconHolderView.layoutParams.width = iconSize.first
                         iconHolderView.layoutParams.height = iconSize.second

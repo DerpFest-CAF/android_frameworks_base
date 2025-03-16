@@ -21,6 +21,7 @@ import static com.android.app.animation.Interpolators.LINEAR;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.util.Log;
 import android.view.View;
 import android.view.View.AccessibilityDelegate;
 import android.view.ViewGroup;
@@ -31,11 +32,11 @@ import java.util.ArrayList;
  * Dispatches common view calls to multiple views.  This is used to handle
  * multiples of the same nav bar icon appearing.
  */
-public class ButtonDispatcher {
+public class ButtonDispatcher implements DragDropSurfaceCallback {
     private static final int FADE_DURATION_IN = 150;
     private static final int FADE_DURATION_OUT = 250;
 
-    private final ArrayList<View> mViews = new ArrayList<>();
+    protected final ArrayList<View> mViews = new ArrayList<>();
 
     private final int mId;
 
@@ -49,11 +50,12 @@ public class ButtonDispatcher {
     private Integer mVisibility = View.VISIBLE;
     private Boolean mDelayTouchFeedback;
     private KeyButtonDrawable mImageDrawable;
-    private View mCurrentView;
+    protected View mCurrentView;
     private boolean mVertical;
     private ValueAnimator mFadeAnimator;
     private AccessibilityDelegate mAccessibilityDelegate;
     private NavBarButtonClickLogger mNavBarButtonClickLogger;
+    private DragDropSurfaceCallback mCallback;
 
     private final ValueAnimator.AnimatorUpdateListener mAlphaListener = animation ->
             setAlpha(
@@ -107,6 +109,7 @@ public class ButtonDispatcher {
                 button.setDelayTouchFeedback(mDelayTouchFeedback);
             }
             button.setVertical(mVertical);
+            button.setForceDisableOverviewCallback(this);
         }
     }
 
@@ -342,6 +345,20 @@ public class ButtonDispatcher {
      * Executes when button is detached from window.
      */
     public void onDestroy() {
+        mCallback = null;
+    }
+
+    @Override
+    public void setForceDisableOverview(boolean forceDisableOverview) {
+        if (mCallback == null) {
+            Log.e("ButtonDispatcher", "mCallback == null");
+            return;
+        }
+        mCallback.setForceDisableOverview(forceDisableOverview);
+    }
+
+    public void setForceDisableOverviewCallback(DragDropSurfaceCallback forceDisableOverviewCallback) {
+        mCallback = forceDisableOverviewCallback;
     }
 
     /**

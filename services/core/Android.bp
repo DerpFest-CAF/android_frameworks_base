@@ -140,6 +140,7 @@ java_library_static {
         ":display-device-config",
         ":display-layout-config",
         ":device-state-config",
+        ":lmofreeform-display-adapter-java",
         "java/com/android/server/EventLogTags.logtags",
         "java/com/android/server/am/EventLogTags.logtags",
         "java/com/android/server/wm/EventLogTags.logtags",
@@ -214,6 +215,7 @@ java_library_static {
         "netd-client",
         "motorola.hardware.health-V1.0-java",
         "overlayable_policy_aidl-java",
+        "SurfaceFlingerProperties",
         "com.android.sysprop.watchdog",
         "securebox",
         "apache-commons-math",
@@ -240,6 +242,7 @@ java_library_static {
         "powerstats_flags_lib",
         "locksettings_flags_lib",
         "framework-derpfest.static",
+        "LMOFaceServer",
     ],
     javac_shard_size: 50,
     javacflags: [

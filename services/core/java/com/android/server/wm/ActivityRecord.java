@@ -314,6 +314,8 @@ import android.os.Debug;
 import android.os.IBinder;
 import android.os.IRemoteCallback;
 import android.os.PersistableBundle;
+import android.os.PowerManagerInternal;
+import android.os.PowerManagerInternal.PowerExtBoosts;
 import android.os.Process;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
@@ -386,6 +388,8 @@ import com.android.server.wm.utils.InsetUtils;
 import com.android.window.flags.Flags;
 
 import dalvik.annotation.optimization.NeverCompile;
+
+import com.google.android.collect.Sets;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -964,6 +968,8 @@ final class ActivityRecord extends WindowToken implements WindowManagerService.A
 
     /** Non-zero to pause dispatching configuration changes to the client. */
     int mPauseConfigurationDispatchCount = 0;
+
+    private PowerManagerInternal mPowerManagerInternal = null;
 
     private final Runnable mPauseTimeoutRunnable = new Runnable() {
         @Override
@@ -3639,6 +3645,19 @@ final class ActivityRecord extends WindowToken implements WindowManagerService.A
                 }
                 mDisplayContent.prepareAppTransition(TRANSIT_CLOSE);
 
+                // When finishing the activity preemptively take the snapshot before the app window
+                // is marked as hidden and any configuration changes take place
+                // Note that RecentsAnimation will handle task snapshot while switching apps with
+                // the best capture timing (e.g. IME window capture),
+                // No need additional task capture while task is controlled by RecentsAnimation.
+                if (!mTransitionController.isShellTransitionsEnabled()
+                        && !task.isAnimatingByRecents()) {
+                    final ArraySet<Task> tasks = Sets.newArraySet(task);
+                    mAtmService.mWindowManager.mTaskSnapshotController.snapshotTasks(tasks);
+                    mAtmService.mWindowManager.mTaskSnapshotController
+                            .addSkipClosingAppSnapshotTasks(tasks);
+                }
+
                 // Tell window manager to prepare for this one to be removed.
                 setVisibility(false);
                 // Propagate the last IME visibility in the same task, so the IME can show
@@ -5868,6 +5887,30 @@ final class ActivityRecord extends WindowToken implements WindowManagerService.A
         updateVisibleForServiceConnection();
         if (app != null) {
             mTaskSupervisor.onProcessActivityStateChanged(app, false /* forceBatch */);
+        }
+
+        mPowerManagerInternal = LocalServices.getService(PowerManagerInternal.class);
+        if (state == RESUMED || state == STARTED) {
+            if (mPowerManagerInternal != null) {
+                final int pid = getPid();
+                String packActName = mActivityComponent.getPackageName() + "/"
+                        + mActivityComponent.getClassName();
+                mPowerManagerInternal.setPowerExtBoost(PowerExtBoosts.ACTIVITY_SWITCH.name(), 2000);
+                mPowerManagerInternal.notifyAppState(packActName, pid,
+                        info.applicationInfo.uid, true /* active */); 
+            } else {
+                Slog.v(TAG, "Failed to sendPowerHint for ACTIVITY_SWITCH and notifyAppState for opened app");
+            }
+        } else if (state == PAUSED || state == STOPPED || state == DESTROYED) {
+            if (mPowerManagerInternal != null) {
+                final int pid = getPid();
+                String packActName = mActivityComponent.getPackageName() + "/"
+                        + mActivityComponent.getClassName();
+                mPowerManagerInternal.notifyAppState(packActName, pid,
+                        info.applicationInfo.uid, false /* inactive */);
+            } else {
+                Slog.v(TAG, "Failed to notifyAppState for paused/closed app");
+            }
         }
 
         switch (state) {
@@ -10486,5 +10529,9 @@ final class ActivityRecord extends WindowToken implements WindowManagerService.A
                     mAtmService.mTaskSupervisor, mOptions, mSourceRecord, mPersistentState,
                     mTaskDescription, mCreateTime);
         }
+    }
+
+    public boolean shouldForceLongScreen() {
+        return mAtmService.shouldForceLongScreen(packageName);
     }
 }

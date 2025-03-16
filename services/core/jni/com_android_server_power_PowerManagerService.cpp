@@ -39,11 +39,15 @@
 #include <limits.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/ScopedUtfChars.h>
+#include <nativehelper/utils.h>
 #include <powermanager/PowerHalController.h>
+#include <unordered_map>
 #include <utils/Log.h>
 #include <utils/String8.h>
 #include <utils/Timers.h>
 #include <utils/misc.h>
+
+#include <PowerExt.h>
 
 #include "jni.h"
 
@@ -67,10 +71,14 @@ static struct {
 
 static jobject gPowerManagerServiceObj;
 static power::PowerHalController gPowerHalController;
+static PowerExt gPowerExtController;
 static nsecs_t gLastEventTime[USER_ACTIVITY_EVENT_LAST + 1];
 
 // Throttling interval for user activity calls.
 static const nsecs_t MIN_TIME_BETWEEN_USERACTIVITIES = 100 * 1000000L; // 100ms
+
+// Cache for both Mode and Boost ext boosts support
+static std::unordered_map<std::string, bool> boostCache;
 
 // ----------------------------------------------------------------------------
 
@@ -84,9 +92,33 @@ static bool checkAndClearExceptionFromCallback(JNIEnv* env, const char* methodNa
     return false;
 }
 
+static bool isPowerExtAvailable() {
+    return gPowerExtController.init();
+}
+
+static bool isPowerExtModeSupported(const ::std::string& mode) {
+    return gPowerExtController.isModeSupported(mode);
+}
+
+static bool isPowerExtBoostSupported(const ::std::string& boost) {
+    return gPowerExtController.isBoostSupported(boost);
+}
+
+static void setPowerExtMode(const ::std::string& mode, bool enabled) {
+    gPowerExtController.setMode(mode, enabled);
+}
+
+static void setPowerExtBoost(const ::std::string& boost, int32_t durationMs) {
+    gPowerExtController.setBoost(boost, durationMs);
+}
+
 static void setPowerBoost(Boost boost, int32_t durationMs) {
     gPowerHalController.setBoost(boost, durationMs);
     SurfaceComposerClient::notifyPowerBoost(static_cast<int32_t>(boost));
+}
+
+static void notifyAppState(const ::std::string& packActName, int pid, int uid, bool active) {
+    gPowerExtController.notifyAppState(packActName, pid, uid, active);
 }
 
 static bool setPowerMode(Mode mode, bool enabled) {
@@ -237,6 +269,48 @@ static void nativeSetAutoSuspend(JNIEnv* /* env */, jclass /* clazz */, jboolean
     }
 }
 
+static void nativeSetPowerExtMode(JNIEnv* env, jclass /* clazz */, jstring mode,
+                                   jint fallback, jboolean enabled) {
+    bool isSupported = isPowerExtAvailable();
+    std::string modeStr(GET_UTF_OR_RETURN_VOID(env, mode));
+    if (isSupported) {
+        if (boostCache.find(modeStr) != boostCache.end()) {
+            isSupported = boostCache[modeStr];
+        } else {
+            isSupported = boostCache[modeStr] = isPowerExtModeSupported(modeStr);
+        }
+    }
+    if (isSupported) {
+        setPowerExtMode(modeStr, enabled);
+    } else if (fallback >= 0) {
+        setPowerMode(static_cast<Mode>(fallback), enabled);
+    }
+}
+
+static void nativeSetPowerExtBoost(JNIEnv* env, jclass /* clazz */, jstring boost,
+                                   jint fallback, jint durationMs) {
+    bool isSupported = isPowerExtAvailable();
+    std::string boostStr(GET_UTF_OR_RETURN_VOID(env, boost));
+    if (isSupported) {
+            if (boostCache.find(boostStr) != boostCache.end()) {
+                isSupported = boostCache[boostStr];
+            } else {
+                isSupported = boostCache[boostStr] = isPowerExtBoostSupported(boostStr);
+            }
+    }
+    if (isSupported) {
+        setPowerExtBoost(boostStr, durationMs);
+    } else if (fallback >= 0) {
+        setPowerBoost(static_cast<Boost>(fallback), durationMs);
+    }
+}
+
+static void nativeNotifyAppState(JNIEnv* env, jclass /* clazz */, jstring packActName,
+                                      jint pid, jint uid, jboolean active) {
+    std::string packActNameStr(GET_UTF_OR_RETURN_VOID(env, packActName));
+    notifyAppState(packActNameStr, pid, uid, active);
+}
+
 static void nativeSetPowerBoost(JNIEnv* /* env */, jclass /* clazz */, jint boost,
                                 jint durationMs) {
     setPowerBoost(static_cast<Boost>(boost), durationMs);
@@ -264,6 +338,9 @@ static const JNINativeMethod gPowerManagerServiceMethods[] = {
         {"nativeReleaseSuspendBlocker", "(Ljava/lang/String;)V",
          (void*)nativeReleaseSuspendBlocker},
         {"nativeSetAutoSuspend", "(Z)V", (void*)nativeSetAutoSuspend},
+        {"nativeSetPowerExtMode", "(Ljava/lang/String;IZ)V", (void*)nativeSetPowerExtMode},
+        {"nativeSetPowerExtBoost", "(Ljava/lang/String;II)V", (void*)nativeSetPowerExtBoost},
+        {"nativeNotifyAppState", "(Ljava/lang/String;IIZ)V", (void*)nativeNotifyAppState},
         {"nativeSetPowerBoost", "(II)V", (void*)nativeSetPowerBoost},
         {"nativeSetPowerMode", "(IZ)Z", (void*)nativeSetPowerMode},
 };

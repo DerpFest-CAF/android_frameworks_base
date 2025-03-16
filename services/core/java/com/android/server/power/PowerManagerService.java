@@ -89,6 +89,7 @@ import android.os.PowerManager.GoToSleepReason;
 import android.os.PowerManager.ServiceType;
 import android.os.PowerManager.WakeReason;
 import android.os.PowerManagerInternal;
+import android.os.PowerManagerInternal.PowerExtBoosts;
 import android.os.PowerSaveState;
 import android.os.Process;
 import android.os.RemoteException;
@@ -995,6 +996,20 @@ public final class PowerManagerService extends SystemService
             PowerManagerService.nativeSetAutoSuspend(enable);
         }
 
+        /** Wrapper for PowerManager.nativeSetPowerExtMode */
+        public void nativeSetPowerExtMode(String mode, int fallback, boolean enabled) {
+            PowerManagerService.nativeSetPowerExtMode(mode, fallback, enabled);
+        }
+
+        /** Wrapper for PowerManager.nativeSetPowerExtBoost */
+        public void nativeSetPowerExtBoost(String boost, int fallback, int durationMs) {
+            PowerManagerService.nativeSetPowerExtBoost(boost, fallback, durationMs);
+        }
+
+        public void nativeNotifyAppState(String packActName, int pid, int uid, boolean active) {
+            PowerManagerService.nativeNotifyAppState(packActName, pid, uid, active);
+        }
+
         /** Wrapper for PowerManager.nativeSetPowerBoost */
         public void nativeSetPowerBoost(int boost, int durationMs) {
             PowerManagerService.nativeSetPowerBoost(boost, durationMs);
@@ -1196,6 +1211,9 @@ public final class PowerManagerService extends SystemService
     private static native void nativeAcquireSuspendBlocker(String name);
     private static native void nativeReleaseSuspendBlocker(String name);
     private static native void nativeSetAutoSuspend(boolean enable);
+    private static native void nativeSetPowerExtMode(String mode, int fallback, boolean enabled);
+    private static native void nativeSetPowerExtBoost(String boost, int fallback, int durationMs);
+    private static native void nativeNotifyAppState(String packActName, int pid, int uid, boolean active);
     private static native void nativeSetPowerBoost(int boost, int durationMs);
     private static native boolean nativeSetPowerMode(int mode, boolean enabled);
     private static native boolean nativeForceSuspend();
@@ -1543,7 +1561,7 @@ public final class PowerManagerService extends SystemService
                 Settings.Global.DEVICE_DEMO_MODE),
                 false, mSettingsObserver, UserHandle.USER_SYSTEM);
 
-        // Register for DerpFest settings changes.
+        // Register for LMODroid settings changes.
         resolver.registerContentObserver(Settings.System.getUriFor(
                 DerpFestSettings.System.PROXIMITY_ON_WAKE),
                 false, mSettingsObserver, UserHandle.USER_ALL);
@@ -4727,6 +4745,20 @@ public final class PowerManagerService extends SystemService
         }
     }
 
+    private void setPowerExtModeInternal(String mode, int fallback, boolean enabled) {
+        // Maybe filter the event.
+        mNativeWrapper.nativeSetPowerExtMode(mode, fallback, enabled);
+    }
+
+    private void setPowerExtBoostInternal(String boost, int fallback, int durationMs) {
+        // Maybe filter the event.
+        mNativeWrapper.nativeSetPowerExtBoost(boost, fallback, durationMs);
+    }
+
+    private void notifyAppStateInternal(String packActName, int pid, int uid, boolean active) {
+        mNativeWrapper.nativeNotifyAppState(packActName, pid, uid, active);
+    }
+
     private void setPowerBoostInternal(int boost, int durationMs) {
         // Maybe filter the event.
         mNativeWrapper.nativeSetPowerBoost(boost, durationMs);
@@ -6023,6 +6055,38 @@ public final class PowerManagerService extends SystemService
             }
             acquireWakeLock(lock, flags, tag, packageName, new WorkSource(uid), null,
                     displayId, callback);
+        }
+
+        @Override // Binder call
+        public void setPowerExtMode(String mode_name, boolean enabled) {
+            if (!mSystemReady) {
+                // Service not ready yet, so who the heck cares about power hints, bah.
+                return;
+            }
+            mContext.enforceCallingOrSelfPermission(android.Manifest.permission.DEVICE_POWER, null);
+            PowerExtBoosts mode = PowerExtBoosts.valueOf(mode_name);
+            setPowerExtModeInternal(mode.name(), mode.getFallback(), enabled);
+        }
+
+        @Override // Binder call
+        public void setPowerExtBoost(String boost_name, int durationMs) {
+            if (!mSystemReady) {
+                // Service not ready yet, so who the heck cares about power hints, bah.
+                return;
+            }
+            mContext.enforceCallingOrSelfPermission(android.Manifest.permission.DEVICE_POWER, null);
+            PowerExtBoosts boost = PowerExtBoosts.valueOf(boost_name);
+            setPowerExtBoostInternal(boost.name(), boost.getFallback(), durationMs);
+        }
+
+        @Override // Binder call
+        public void notifyAppState(String packActName, int pid, int uid, boolean active) {
+            if (!mSystemReady) {
+                // Service not ready yet, so who the heck cares about power hints, bah.
+                return;
+            }
+            mContext.enforceCallingOrSelfPermission(android.Manifest.permission.DEVICE_POWER, null);
+            notifyAppStateInternal(packActName, pid, uid, active);
         }
 
         @Override // Binder call
@@ -7551,6 +7615,23 @@ public final class PowerManagerService extends SystemService
         @Override
         public void uidIdle(int uid) {
             uidIdleInternal(uid);
+        }
+
+        @Override
+        public void setPowerExtMode(String mode_name, boolean enabled) {
+            PowerExtBoosts mode = PowerExtBoosts.valueOf(mode_name);
+            setPowerExtModeInternal(mode.name(), mode.getFallback(), enabled);
+        }
+
+        @Override
+        public void setPowerExtBoost(String boost_name, int durationMs) {
+            PowerExtBoosts boost = PowerExtBoosts.valueOf(boost_name);
+            setPowerExtBoostInternal(boost.name(), boost.getFallback(), durationMs);
+        }
+
+        @Override
+        public void notifyAppState(String packActName, int pid, int uid, boolean active) {
+            notifyAppStateInternal(packActName, pid, uid, active);
         }
 
         @Override

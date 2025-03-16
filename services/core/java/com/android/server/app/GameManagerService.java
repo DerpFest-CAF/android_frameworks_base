@@ -2383,7 +2383,7 @@ public final class GameManagerService extends IGameManagerService.Stub {
             // We write key and value of the device_config property as a single string
             // from our GameSpace.
             // ';;' is the separator betweeen key and value.
-            // Example: org.derpfest.game;;mode=2,downscaleFactor=0.7:mode=3,downscaleFactor=0.8
+            // Example: com.libremobileos.game;;mode=2,downscaleFactor=0.7:mode=3,downscaleFactor=0.8
             // So split the key and value from the string
             // and set the device_config propery.
             String[] parsedValues = newValue.split(";;");

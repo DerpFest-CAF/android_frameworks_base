@@ -57,7 +57,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 
 /**
+ * @deprecated Don't use this class to listen to Secure Settings. Use {@code SecureSettings} instead
+ * or {@code SettingsObserver} to be able to specify the handler.
+ * This class will interact with SecureSettings using the main looper.
  */
+@Deprecated
 @SysUISingleton
 public class TunerServiceImpl extends TunerService {
 
@@ -70,6 +74,7 @@ public class TunerServiceImpl extends TunerService {
     // shouldn't be reset with tuner settings.
     private static final String[] RESET_EXCEPTION_LIST = new String[] {
             QSHost.TILES_SETTING,
+            Settings.Secure.DOUBLE_TAP_TO_WAKE,
             Settings.Secure.DOZE_ALWAYS_ON,
             Settings.Secure.MEDIA_CONTROLS_RESUME,
             Settings.Secure.MEDIA_CONTROLS_RECOMMENDATION

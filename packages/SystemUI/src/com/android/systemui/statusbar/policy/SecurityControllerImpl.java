@@ -66,6 +66,8 @@ import com.android.systemui.dump.DumpManager;
 import com.android.systemui.res.R;
 import com.android.systemui.settings.UserTracker;
 
+import org.derpfest.providers.DerpFestSettings;
+
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
@@ -76,8 +78,6 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import javax.inject.Inject;
-
-import org.derpfest.providers.DerpFestSettings;
 
 /**
  */

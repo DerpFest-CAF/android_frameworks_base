@@ -31,7 +31,7 @@ import android.os.UserManager
 import android.util.Log
 import androidx.annotation.GuardedBy
 import androidx.annotation.WorkerThread
-import org.derpfest.app.ParallelSpaceManager;
+import com.libremobileos.app.ParallelSpaceManager;
 import com.android.systemui.Dumpable
 import com.android.systemui.dump.DumpManager
 import com.android.systemui.flags.FeatureFlagsClassic
@@ -146,7 +146,7 @@ internal constructor(
                 addAction(Intent.ACTION_MANAGED_PROFILE_ADDED)
                 addAction(Intent.ACTION_MANAGED_PROFILE_REMOVED)
                 addAction(Intent.ACTION_MANAGED_PROFILE_UNLOCKED)
-                addAction(org.derpfest.content.Intent.ACTION_PARALLEL_SPACE_CHANGED)
+                addAction(com.libremobileos.content.Intent.ACTION_PARALLEL_SPACE_CHANGED)
             }
         context.registerReceiverForAllUsers(this, filter, null, backgroundHandler,
                 Context.RECEIVER_EXPORTED)
@@ -169,7 +169,7 @@ internal constructor(
             Intent.ACTION_PROFILE_REMOVED,
             Intent.ACTION_PROFILE_AVAILABLE,
             Intent.ACTION_PROFILE_UNAVAILABLE,
-            org.derpfest.content.Intent.ACTION_PARALLEL_SPACE_CHANGED -> {
+            com.libremobileos.content.Intent.ACTION_PARALLEL_SPACE_CHANGED -> {
                 handleProfilesChanged()
             }
         }

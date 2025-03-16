@@ -41,7 +41,6 @@ import com.android.systemui.qs.footer.data.repository.ForegroundServicesReposito
 import com.android.systemui.qs.footer.domain.model.SecurityButtonConfig
 import com.android.systemui.security.data.repository.SecurityRepository
 import com.android.systemui.statusbar.policy.DeviceProvisionedController
-import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.user.data.repository.UserSwitcherRepository
 import com.android.systemui.user.domain.interactor.UserSwitcherInteractor
 import org.derpfest.providers.DerpFestSettings
@@ -102,7 +101,6 @@ constructor(
     private val metricsLogger: MetricsLogger,
     private val uiEventLogger: UiEventLogger,
     private val deviceProvisionedController: DeviceProvisionedController,
-    private val keyguardStateController: KeyguardStateController,
     private val qsSecurityFooterUtils: QSSecurityFooterUtils,
     private val fgsManagerController: FgsManagerController,
     private val userSwitcherInteractor: UserSwitcherInteractor,
@@ -159,7 +157,7 @@ constructor(
         if (Settings.Secure.getInt(globalActionsDialogLite.context.getContentResolver(),
                 DerpFestSettings.Secure.POWER_MENU_TYPE, 0) == 0)
             globalActionsDialogLite.showOrHideDialog(
-                keyguardStateController.isShowing(),
+                /* keyguardShowing= */ false,
                 /* isDeviceProvisioned= */ true,
                 expandable,
             )

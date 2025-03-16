@@ -1078,6 +1078,11 @@ public class RingtoneManager {
         }
     }
 
+    // To fix compiling tests
+    private static String getSettingForType(int type) {
+        return getSettingForTypeBySlot(type, 0 /* slot1 by default */);
+    }
+
     private static String getSettingForTypeBySlot(int type, int slotId) {
         if ((type & TYPE_RINGTONE) != 0) {
             return slotId == 1 ? Settings.System.RINGTONE2 : Settings.System.RINGTONE;

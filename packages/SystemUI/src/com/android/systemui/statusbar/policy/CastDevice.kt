@@ -47,8 +47,7 @@ data class CastDevice(
             val state =
                 when {
                     statusCode == MediaRouter.RouteInfo.STATUS_CONNECTING -> CastState.Connecting
-                    this.isSelected && statusCode != MediaRouter.RouteInfo.STATUS_NOT_AVAILABLE
-                        || statusCode == MediaRouter.RouteInfo.STATUS_CONNECTED ->
+                    this.isSelected || statusCode == MediaRouter.RouteInfo.STATUS_CONNECTED ->
                         CastState.Connected
                     else -> CastState.Disconnected
                 }
